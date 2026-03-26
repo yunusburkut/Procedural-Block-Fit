@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "difficulty": "easy",
+  "grid": { "size": 4 },
+  "pieces": [
+    {
+      "id": 0,
+      "cells": [0, 1, 4, 5],
+      "color": "#4A90D9",
+      "anchors": [0],
+      "spawnX": -5.0,
+      "spawnY":  2.0,
+      "solutionRotation": 0
+    },
+    {
+      "id": 1,
+      "cells": [2, 3, 6],
+      "color": "#E94E77",
+      "anchors": [2],
+      "spawnX": -5.0,
+      "spawnY":  0.5,
+      "solutionRotation": 0
+    },
+    {
+      "id": 2,
+      "cells": [7, 11, 15],
+      "color": "#50C878",
+      "anchors": [11],
+      "spawnX": -5.0,
+      "spawnY": -1.0,
+      "solutionRotation": 0
+    },
+    {
+      "id": 3,
+      "cells": [8, 9, 12, 13],
+      "color": "#F5A623",
+      "anchors": [8],
+      "spawnX": -5.0,
+      "spawnY": -2.5,
+      "solutionRotation": 0
+    },
+    {
+      "id": 4,
+      "cells": [10, 14],
+      "color": "#9B59B6",
+      "anchors": [10],
+      "spawnX": -5.0,
+      "spawnY": -4.0,
+      "solutionRotation": 0
+    }
+  ]
+}
