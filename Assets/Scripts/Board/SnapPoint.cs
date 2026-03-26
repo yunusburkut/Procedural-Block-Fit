@@ -20,7 +20,7 @@ namespace Blokfit.Board
         private SpriteRenderer _sr;
 
         private static Sprite _sharedSprite;
-        private static readonly Color FreeColor     = new Color(1f, 1f, 1f, 0.18f);
+        private static readonly Color FreeColor     = new Color(1f, 1f, 1f, 0.22f);
         private static readonly Color OccupiedColor = new Color(0f, 0f, 0f, 0f);
 
         public void Initialize(int col, int row, Vector2 worldPos, float cellSize)
@@ -44,7 +44,7 @@ namespace Blokfit.Board
             _sr.sortingOrder = -1;
             _sr.color        = FreeColor;
 
-            transform.localScale = Vector3.one * (cellSize * 0.85f);
+            transform.localScale = Vector3.one * (cellSize * 0.18f);
         }
 
         private void RefreshVisual()
@@ -55,17 +55,31 @@ namespace Blokfit.Board
 
         private static Sprite CreateWhiteSquareSprite()
         {
-            var tex = new Texture2D(4, 4, TextureFormat.RGBA32, false)
+            const int size = 64;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
             {
-                filterMode = FilterMode.Point,
+                filterMode = FilterMode.Bilinear,
                 wrapMode   = TextureWrapMode.Clamp,
             };
-            Color[] px = new Color[16];
-            for (int i = 0; i < 16; i++) px[i] = Color.white;
+
+            float center = (size - 1) * 0.5f;
+            float radius = center;
+            Color[] px = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = x - center;
+                    float dy = y - center;
+                    float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                    float alpha = Mathf.Clamp01(radius - dist);
+                    px[y * size + x] = new Color(1f, 1f, 1f, alpha);
+                }
+            }
             tex.SetPixels(px);
             tex.Apply();
 
-            return Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
         }
     }
 }

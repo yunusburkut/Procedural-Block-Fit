@@ -5,8 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a673bb86-d408-4b8b-9f29-6d719349a978" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.BiggerRepo/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.BiggerRepo/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Prefabs/Board.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Prefabs/Board.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/SO/DifficultyConfigSO.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/SO/DifficultyConfigSO.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Board/SnapPoint.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Board/SnapPoint.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Pieces/PieceBehaviour.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Pieces/PieceBehaviour.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Shaders/BoardGrid.shader" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Shaders/BoardGrid.shader" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -96,7 +100,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1774499045776</updated>
-      <workItem from="1774499047733" duration="5289000" />
+      <workItem from="1774499047733" duration="7579000" />
     </task>
     <servers />
   </component>

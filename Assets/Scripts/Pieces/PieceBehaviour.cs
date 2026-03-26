@@ -173,7 +173,7 @@ namespace Blokfit.Pieces
                     (col - anchorCol) * _cellSize,
                     (row - anchorRow) * _cellSize,
                     0f);
-                cellGo.transform.localScale = Vector3.one * (_cellSize * 0.92f);
+                cellGo.transform.localScale = Vector3.one * _cellSize;
 
                 var sr = cellGo.AddComponent<SpriteRenderer>();
                 sr.sprite       = cellSprite;

@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: DifficultyConfigSO
   m_EditorClassIdentifier: Blokfit.Scripts::Blokfit.ScriptableObjects.DifficultyConfig
   difficultyName: easy
-  gridSize: 4
-  boardWorldSize: 7
-  minPieces: 5
-  maxPieces: 6
-  minPieceSize: 3
-  maxPieceSize: 4
+  gridSize: 9
+  boardWorldSize: 6
+  minPieces: 9
+  maxPieces: 10
+  minPieceSize: 12
+  maxPieceSize: 11
   allowRotations: 0
   minAnchors: 1
   maxAnchors: 1

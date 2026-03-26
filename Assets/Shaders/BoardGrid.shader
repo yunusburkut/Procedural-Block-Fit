@@ -54,16 +54,7 @@ Shader "Blokfit/BoardGrid"
 
             half4 frag(Varyings IN) : SV_Target
             {
-                // Scale UV so each cell occupies [0, 1]
-                float2 cell = frac(IN.uv * _GridSize);
-
-                // Distance from the nearest cell edge (0 or 1) on each axis
-                float2 edge = min(cell, 1.0 - cell);
-
-                float halfLine = _LineWidth * 0.5;
-                bool onLine = (edge.x < halfLine) || (edge.y < halfLine);
-
-                return half4(onLine ? _LineColor.rgb : _BaseColor.rgb, 1.0);
+                return half4(_BaseColor.rgb, 1.0);
             }
             ENDHLSL
         }
