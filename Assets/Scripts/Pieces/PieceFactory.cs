@@ -1,10 +1,9 @@
-﻿using System;
+using System;
 using UnityEngine;
 using Blokfit.Core;
 
 namespace Blokfit.Pieces
 {
-
     public static class PieceFactory
     {
         public static PieceData FromJson(PieceJson json, int gridSize)
@@ -13,24 +12,34 @@ namespace Blokfit.Pieces
                 ? json.anchors[0]
                 : json.cells[0];
 
-            int anchorRow = primaryAnchorFlat / gridSize;
-            int anchorCol = primaryAnchorFlat % gridSize;
+            // Anchor vertex = bottom-left corner of the anchor triangle's cell.
+            int anchorCellFlat = primaryAnchorFlat / 2;
+            int anchorCol      = anchorCellFlat % gridSize;
+            int anchorRow      = anchorCellFlat / gridSize;
 
-            var offsets = new Vector2Int[json.cells.Length];
+            var offsets = new TriOffset[json.cells.Length];
             for (int i = 0; i < json.cells.Length; i++)
             {
-                int row = json.cells[i] / gridSize;
-                int col = json.cells[i] % gridSize;
-                offsets[i] = new Vector2Int(col - anchorCol, row - anchorRow);
+                int triFlat  = json.cells[i];
+                int cellFlat = triFlat / 2;
+                int type     = triFlat % 2;
+                int col      = cellFlat % gridSize;
+                int row      = cellFlat / gridSize;
+                offsets[i] = new TriOffset
+                {
+                    dcol = col - anchorCol,
+                    drow = row - anchorRow,
+                    type = type,
+                };
             }
 
             return new PieceData
             {
-                cells            = json.cells,
-                cellOffsets      = offsets,
-                anchorCells      = json.anchors ?? new[] { json.cells[0] },
-                color            = ParseHexColor(json.color),
-                gridSize         = gridSize,
+                cells             = json.cells,
+                triangleOffsets   = offsets,
+                anchorCells       = json.anchors ?? new[] { json.cells[0] },
+                color             = ParseHexColor(json.color),
+                gridSize          = gridSize,
                 primaryAnchorFlat = primaryAnchorFlat,
             };
         }

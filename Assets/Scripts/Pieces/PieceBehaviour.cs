@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using Blokfit.Board;
@@ -7,7 +7,6 @@ using Blokfit.ScriptableObjects;
 
 namespace Blokfit.Pieces
 {
-
     [RequireComponent(typeof(SpriteRenderer))]
     [RequireComponent(typeof(PolygonCollider2D))]
     public class PieceBehaviour : MonoBehaviour,
@@ -15,9 +14,7 @@ namespace Blokfit.Pieces
         IDragHandler,
         IPointerUpHandler
     {
-
         public PieceData Data { get; private set; }
-
         public List<Transform> AnchorTransforms { get; private set; }
 
         private SnapSystem        _snapSystem;
@@ -27,7 +24,6 @@ namespace Blokfit.Pieces
 
         private SpriteRenderer    _spriteRenderer;
         private PolygonCollider2D _collider;
-        private MaterialPropertyBlock _mpb;
 
         private Vector2 _originalPosition;
         private Vector2 _dragOffset;
@@ -35,19 +31,23 @@ namespace Blokfit.Pieces
 
         private static readonly int ColorProp = Shader.PropertyToID("_Color");
 
-        private const int   DragSortBoost   = 1000;
-        private const float DragScale       = 1.1f;
+        private const int   DragSortBoost = 1000;
+        private const float DragScale     = 1.1f;
 
         private static int _globalSortCounter = 0;
         private int _myOrder = 0;
 
+        // Shared triangle sprites (lower = type 0, upper = type 1)
+        private static Sprite _lowerTriSprite;
+        private static Sprite _upperTriSprite;
+
         public void Initialize(
-            PieceData          data,
-            float              cellSize,
-            DifficultyConfig   config,
-            SnapSystem         snapSystem,
-            InputHandler       inputHandler,
-            BoardController    board)
+            PieceData         data,
+            float             cellSize,
+            DifficultyConfig  config,
+            SnapSystem        snapSystem,
+            InputHandler      inputHandler,
+            BoardController   board)
         {
             Data          = data;
             _cellSize     = cellSize;
@@ -58,11 +58,10 @@ namespace Blokfit.Pieces
 
             _spriteRenderer = GetComponent<SpriteRenderer>();
             _collider       = GetComponent<PolygonCollider2D>();
-            _mpb            = new MaterialPropertyBlock();
 
             _originalPosition = transform.position;
 
-            BuildCellSprites();
+            BuildTriangleSprites();
             BuildCollider();
             BuildAnchorTransforms();
         }
@@ -79,24 +78,14 @@ namespace Blokfit.Pieces
             SetDragging(false);
         }
 
+        // Visual rotation only – triangle offsets are not updated.
         public void ApplyRotation(float degrees)
         {
             transform.Rotate(0f, 0f, degrees);
-
-            int steps = Mathf.RoundToInt(degrees / 90f);
-            var newOffsets = new Vector2Int[Data.cellOffsets.Length];
-            for (int i = 0; i < Data.cellOffsets.Length; i++)
-                newOffsets[i] = RotateOffset(Data.cellOffsets[i], steps);
-
-            var updated = Data;
-            updated.cellOffsets = newOffsets;
-            Data = updated;
-
         }
 
         public void OnPointerDown(PointerEventData eventData)
         {
-
             if (_inputHandler.IsDragging && _inputHandler.CurrentDrag.Piece == this
                 && eventData.pointerId != _inputHandler.CurrentDrag.PointerId)
             {
@@ -112,9 +101,7 @@ namespace Blokfit.Pieces
                 return;
 
             _myOrder = ++_globalSortCounter;
-
             _board.Lift(this);
-
             SetDragging(true);
             _dragOffset = offset;
         }
@@ -122,7 +109,6 @@ namespace Blokfit.Pieces
         public void OnDrag(PointerEventData eventData)
         {
             if (_inputHandler.CurrentDrag?.Piece != this) return;
-
             Vector2 worldPoint = ScreenToWorld(eventData.position);
             transform.position = worldPoint + _dragOffset;
         }
@@ -130,9 +116,7 @@ namespace Blokfit.Pieces
         public void OnPointerUp(PointerEventData eventData)
         {
             if (_inputHandler.CurrentDrag?.Piece != this) return;
-
             _snapSystem.TrySnap(this, transform.position);
-
             SetDragging(false);
             _inputHandler.EndDrag();
         }
@@ -149,34 +133,29 @@ namespace Blokfit.Pieces
             }
         }
 
-        private void BuildCellSprites()
-        {
+        // ── Build ──────────────────────────────────────────────────────────
 
+        private void BuildTriangleSprites()
+        {
             _spriteRenderer.enabled = false;
 
-            Sprite cellSprite = _spriteRenderer.sprite != null
-                ? _spriteRenderer.sprite
-                : CreateWhiteSquareSprite();
+            if (_lowerTriSprite == null) _lowerTriSprite = CreateTriSprite(0);
+            if (_upperTriSprite == null) _upperTriSprite = CreateTriSprite(1);
 
-            int anchorFlat = Data.primaryAnchorFlat;
-            int anchorCol  = anchorFlat % Data.gridSize;
-            int anchorRow  = anchorFlat / Data.gridSize;
-
-            foreach (int flat in Data.cells)
+            foreach (var tri in Data.triangleOffsets)
             {
-                int col = flat % Data.gridSize;
-                int row = flat / Data.gridSize;
-
-                var cellGo = new GameObject($"Cell_{col}_{row}");
+                var cellGo = new GameObject($"Tri_{tri.dcol}_{tri.drow}_{tri.type}");
                 cellGo.transform.SetParent(transform, false);
+                // Position at the bottom-left vertex of this triangle's cell in local space.
                 cellGo.transform.localPosition = new Vector3(
-                    (col - anchorCol) * _cellSize,
-                    (row - anchorRow) * _cellSize,
+                    tri.dcol * _cellSize,
+                    tri.drow * _cellSize,
                     0f);
+                // Scale so the 1×1 sprite covers exactly one cell.
                 cellGo.transform.localScale = Vector3.one * _cellSize;
 
                 var sr = cellGo.AddComponent<SpriteRenderer>();
-                sr.sprite       = cellSprite;
+                sr.sprite       = tri.type == 0 ? _lowerTriSprite : _upperTriSprite;
                 sr.sortingOrder = 0;
 
                 var mpb = new MaterialPropertyBlock();
@@ -187,29 +166,21 @@ namespace Blokfit.Pieces
 
         private void BuildCollider()
         {
-            int anchorFlat = Data.primaryAnchorFlat;
-            int anchorCol  = anchorFlat % Data.gridSize;
-            int anchorRow  = anchorFlat / Data.gridSize;
+            _collider.pathCount = Data.triangleOffsets.Length;
 
-            _collider.pathCount = Data.cells.Length;
-            float h = _cellSize * 0.5f;
-
-            for (int i = 0; i < Data.cells.Length; i++)
+            for (int i = 0; i < Data.triangleOffsets.Length; i++)
             {
-                int flat = Data.cells[i];
-                int col  = flat % Data.gridSize;
-                int row  = flat / Data.gridSize;
+                var tri = Data.triangleOffsets[i];
+                float x0 = tri.dcol       * _cellSize;
+                float y0 = tri.drow       * _cellSize;
+                float x1 = (tri.dcol + 1) * _cellSize;
+                float y1 = (tri.drow + 1) * _cellSize;
 
-                float lx = (col - anchorCol) * _cellSize;
-                float ly = (row - anchorRow) * _cellSize;
+                Vector2[] path = tri.type == 0
+                    ? new[] { new Vector2(x0, y0), new Vector2(x1, y0), new Vector2(x1, y1) }
+                    : new[] { new Vector2(x0, y0), new Vector2(x1, y1), new Vector2(x0, y1) };
 
-                _collider.SetPath(i, new[]
-                {
-                    new Vector2(lx - h, ly - h),
-                    new Vector2(lx + h, ly - h),
-                    new Vector2(lx + h, ly + h),
-                    new Vector2(lx - h, ly + h),
-                });
+                _collider.SetPath(i, path);
             }
         }
 
@@ -218,40 +189,49 @@ namespace Blokfit.Pieces
             var anchorRoot = new GameObject("AnchorRoot");
             anchorRoot.transform.SetParent(transform, false);
 
-            AnchorTransforms = new List<Transform>(Data.anchorCells.Length);
+            AnchorTransforms = new List<Transform>(1);
 
-            int primaryFlat = Data.primaryAnchorFlat;
-            int primaryCol  = primaryFlat % Data.gridSize;
-            int primaryRow  = primaryFlat / Data.gridSize;
-
-            foreach (int anchorFlat in Data.anchorCells)
-            {
-                int aCol = anchorFlat % Data.gridSize;
-                int aRow = anchorFlat / Data.gridSize;
-
-                var go = new GameObject($"Anchor_{aCol}_{aRow}");
-                go.transform.SetParent(anchorRoot.transform, false);
-                go.transform.localPosition = new Vector3(
-                    (aCol - primaryCol) * _cellSize,
-                    (aRow - primaryRow) * _cellSize,
-                    0f);
-                AnchorTransforms.Add(go.transform);
-            }
+            // The anchor vertex is always at local (0,0) – the piece pivot IS the anchor.
+            var go = new GameObject("Anchor_0");
+            go.transform.SetParent(anchorRoot.transform, false);
+            go.transform.localPosition = Vector3.zero;
+            AnchorTransforms.Add(go.transform);
         }
 
-        private static Sprite CreateWhiteSquareSprite()
+        // ── Sprite factory ────────────────────────────────────────────────
+
+        /// <summary>
+        /// Creates a 64×64 white sprite shaped as a right-angled triangle.
+        /// type 0 = lower (/ diagonal, occupies lower-right half of cell)
+        /// type 1 = upper (/ diagonal, occupies upper-left  half of cell)
+        /// Pivot at bottom-left (0,0) so localPosition = cell BL in parent space.
+        /// </summary>
+        private static Sprite CreateTriSprite(int type)
         {
-            var tex = new Texture2D(4, 4, TextureFormat.RGBA32, false)
+            const int size = 64;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
             {
-                filterMode = FilterMode.Point,
+                filterMode = FilterMode.Bilinear,
                 wrapMode   = TextureWrapMode.Clamp,
             };
-            Color[] px = new Color[16];
-            for (int i = 0; i < 16; i++) px[i] = Color.white;
+
+            Color[] px = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    // Signed distance from the / diagonal (positive = inside the triangle).
+                    float edge  = type == 0 ? (x - y) : (y - x);
+                    float alpha = Mathf.Clamp01(edge + 0.5f);
+                    px[y * size + x] = new Color(1f, 1f, 1f, alpha);
+                }
+            }
             tex.SetPixels(px);
             tex.Apply();
 
-            return Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
+            // PPU = size → 1 world unit = full sprite width.
+            // Pivot (0,0) = bottom-left corner of the texture.
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0f, 0f), size);
         }
 
         private static Vector2 ScreenToWorld(Vector2 screenPos)
@@ -259,16 +239,6 @@ namespace Blokfit.Pieces
             Vector3 wp = Camera.main.ScreenToWorldPoint(
                 new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
             return wp;
-        }
-
-        private static Vector2Int RotateOffset(Vector2Int offset, int steps90)
-        {
-
-            steps90 = ((steps90 % 4) + 4) % 4;
-            Vector2Int v = offset;
-            for (int i = 0; i < steps90; i++)
-                v = new Vector2Int(-v.y, v.x);
-            return v;
         }
 
 #if UNITY_EDITOR
@@ -280,8 +250,8 @@ namespace Blokfit.Pieces
             foreach (var t in AnchorTransforms)
             {
                 Vector3 p = t.position;
-                Gizmos.DrawLine(p + new Vector3(-s, 0, 0), p + new Vector3( s, 0, 0));
-                Gizmos.DrawLine(p + new Vector3(0, -s, 0), p + new Vector3(0,  s, 0));
+                Gizmos.DrawLine(p + new Vector3(-s, 0, 0), p + new Vector3(s, 0, 0));
+                Gizmos.DrawLine(p + new Vector3(0, -s, 0), p + new Vector3(0, s, 0));
             }
         }
 #endif
