@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using Blokfit.Board;
 using Blokfit.Commands;
@@ -42,7 +41,7 @@ namespace Blokfit.Core
         private void Start()
         {
             _boardController.OnBoardCompleted += HandleBoardCompleted;
-            _snapSystem.OnMoveExecuted         = HandleMoveExecuted;
+            _snapSystem.OnMoveExecuted         += HandleMoveExecuted;
 
             BeginLevel(_easyConfig);
         }
@@ -78,18 +77,16 @@ namespace Blokfit.Core
             _pieceSpawner.DestroyAll();
             _boardController.ResetBoard();
 
-            StartCoroutine(LoadLevelCoroutine(config));
+            LoadLevel(config);
         }
 
-        private IEnumerator LoadLevelCoroutine(DifficultyConfig config)
+        private void LoadLevel(DifficultyConfig config)
         {
             LevelData levelData = _levelGenerator.Generate(config);
 
             _boardController.Initialize(levelData.grid.size, config.boardWorldSize);
             _snapSystem.SetSnapThreshold(_boardController.CellSize);
             _pieceSpawner.SpawnAll(levelData.pieces, levelData.grid.size, config);
-
-            yield break;
         }
 
         private void HandleBoardCompleted()
@@ -106,18 +103,16 @@ namespace Blokfit.Core
 
         private static DifficultyConfig MakeConfig(
             string name, int gridSize, int minPieces, int maxPieces,
-            int minPieceSize, int maxPieceSize)
+            int minPieceSize, int maxPieceSize) => new DifficultyConfig
         {
-            var cfg = ScriptableObject.CreateInstance<DifficultyConfig>();
-            cfg.difficultyName = name;
-            cfg.gridSize       = gridSize;
-            cfg.boardWorldSize = 7f;
-            cfg.minPieces      = minPieces;
-            cfg.maxPieces      = maxPieces;
-            cfg.minPieceSize   = minPieceSize;
-            cfg.maxPieceSize   = maxPieceSize;
-            return cfg;
-        }
+            difficultyName = name,
+            gridSize       = gridSize,
+            boardWorldSize = 7f,
+            minPieces      = minPieces,
+            maxPieces      = maxPieces,
+            minPieceSize   = minPieceSize,
+            maxPieceSize   = maxPieceSize,
+        };
     }
 }
 

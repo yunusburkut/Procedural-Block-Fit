@@ -11,6 +11,8 @@ namespace Blokfit.UI
         [SerializeField] private Button     _mediumButton;
         [SerializeField] private Button     _hardButton;
         [SerializeField] private GameObject _completionPanel;
+        [SerializeField] private Text        _moveCounterText;
+        
 
         private System.Action _onRestartRequested;
         private System.Action _onEasy;
@@ -35,7 +37,11 @@ namespace Blokfit.UI
             _onHard   = hard;
         }
 
-        public void UpdateMoveCounter(int count) { }
+        public void UpdateMoveCounter(int count)
+        {
+            if (_moveCounterText != null)
+                _moveCounterText.text = $"Moves: {count}";
+        }
 
         public void ShowCompletion()
         {

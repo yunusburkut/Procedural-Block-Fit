@@ -28,6 +28,7 @@ namespace Blokfit.Pieces
         private Vector2 _originalPosition;
         private Vector2 _dragOffset;
         private float   _cellSize;
+        private Camera  _camera;
 
         private static readonly int ColorProp = Shader.PropertyToID("_Color");
 
@@ -37,9 +38,13 @@ namespace Blokfit.Pieces
         private static int _globalSortCounter = 0;
         private int _myOrder = 0;
 
+        public static void ResetSortCounter() => _globalSortCounter = 0;
+
         // Shared triangle sprites (lower = type 0, upper = type 1)
         private static Sprite _lowerTriSprite;
         private static Sprite _upperTriSprite;
+
+        private List<SpriteRenderer> _triRenderers;
 
         public void Initialize(
             PieceData         data,
@@ -60,6 +65,7 @@ namespace Blokfit.Pieces
             _collider       = GetComponent<PolygonCollider2D>();
 
             _originalPosition = transform.position;
+            _camera           = Camera.main;
 
             BuildTriangleSprites();
             BuildCollider();
@@ -116,7 +122,7 @@ namespace Blokfit.Pieces
         public void OnPointerUp(PointerEventData eventData)
         {
             if (_inputHandler.CurrentDrag?.Piece != this) return;
-            _snapSystem.TrySnap(this, transform.position);
+            _snapSystem.TrySnap(this);
             SetDragging(false);
             _inputHandler.EndDrag();
         }
@@ -126,11 +132,9 @@ namespace Blokfit.Pieces
             transform.localScale = dragging ? Vector3.one * DragScale : Vector3.one;
 
             int order = _myOrder + (dragging ? DragSortBoost : 0);
-            foreach (Transform child in transform)
-            {
-                var sr = child.GetComponent<SpriteRenderer>();
-                if (sr != null) sr.sortingOrder = order;
-            }
+            if (_triRenderers == null) return;
+            foreach (var sr in _triRenderers)
+                sr.sortingOrder = order;
         }
 
         // ── Build ──────────────────────────────────────────────────────────
@@ -142,35 +146,34 @@ namespace Blokfit.Pieces
             if (_lowerTriSprite == null) _lowerTriSprite = CreateTriSprite(0);
             if (_upperTriSprite == null) _upperTriSprite = CreateTriSprite(1);
 
-            foreach (var tri in Data.triangleOffsets)
+            var mpb = new MaterialPropertyBlock();
+            mpb.SetColor(ColorProp, (Color)Data.Color);
+
+            _triRenderers = new List<SpriteRenderer>(Data.TriangleOffsets.Length);
+
+            foreach (var tri in Data.TriangleOffsets)
             {
                 var cellGo = new GameObject($"Tri_{tri.dcol}_{tri.drow}_{tri.type}");
                 cellGo.transform.SetParent(transform, false);
-                // Position at the bottom-left vertex of this triangle's cell in local space.
-                cellGo.transform.localPosition = new Vector3(
-                    tri.dcol * _cellSize,
-                    tri.drow * _cellSize,
-                    0f);
-                // Scale so the 1×1 sprite covers exactly one cell.
-                cellGo.transform.localScale = Vector3.one * _cellSize;
+                cellGo.transform.localPosition = new Vector3(tri.dcol * _cellSize, tri.drow * _cellSize, 0f);
+                cellGo.transform.localScale    = Vector3.one * _cellSize;
 
                 var sr = cellGo.AddComponent<SpriteRenderer>();
                 sr.sprite       = tri.type == 0 ? _lowerTriSprite : _upperTriSprite;
                 sr.sortingOrder = 0;
-
-                var mpb = new MaterialPropertyBlock();
-                mpb.SetColor(ColorProp, (Color)Data.color);
                 sr.SetPropertyBlock(mpb);
+
+                _triRenderers.Add(sr);
             }
         }
 
         private void BuildCollider()
         {
-            _collider.pathCount = Data.triangleOffsets.Length;
+            _collider.pathCount = Data.TriangleOffsets.Length;
 
-            for (int i = 0; i < Data.triangleOffsets.Length; i++)
+            for (int i = 0; i < Data.TriangleOffsets.Length; i++)
             {
-                var tri = Data.triangleOffsets[i];
+                var tri = Data.TriangleOffsets[i];
                 float x0 = tri.dcol       * _cellSize;
                 float y0 = tri.drow       * _cellSize;
                 float x1 = (tri.dcol + 1) * _cellSize;
@@ -186,16 +189,8 @@ namespace Blokfit.Pieces
 
         private void BuildAnchorTransforms()
         {
-            var anchorRoot = new GameObject("AnchorRoot");
-            anchorRoot.transform.SetParent(transform, false);
-
-            AnchorTransforms = new List<Transform>(1);
-
             // The anchor vertex is always at local (0,0) – the piece pivot IS the anchor.
-            var go = new GameObject("Anchor_0");
-            go.transform.SetParent(anchorRoot.transform, false);
-            go.transform.localPosition = Vector3.zero;
-            AnchorTransforms.Add(go.transform);
+            AnchorTransforms = new List<Transform>(1) { transform };
         }
 
         // ── Sprite factory ────────────────────────────────────────────────
@@ -234,10 +229,10 @@ namespace Blokfit.Pieces
             return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0f, 0f), size);
         }
 
-        private static Vector2 ScreenToWorld(Vector2 screenPos)
+        private Vector2 ScreenToWorld(Vector2 screenPos)
         {
-            Vector3 wp = Camera.main.ScreenToWorldPoint(
-                new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
+            Vector3 wp = _camera.ScreenToWorldPoint(
+                new Vector3(screenPos.x, screenPos.y, -_camera.transform.position.z));
             return wp;
         }
 

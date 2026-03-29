@@ -8,20 +8,38 @@ namespace Blokfit.Pieces
     ///   type 0 = lower triangle  (vertices: BL, BR, TR)
     ///   type 1 = upper triangle  (vertices: BL, TR, TL)
     /// </summary>
-    public struct TriOffset
+    public readonly struct TriOffset
     {
-        public int dcol;
-        public int drow;
-        public int type;
+        public readonly int dcol;
+        public readonly int drow;
+        public readonly int type;
+
+        public TriOffset(int dcol, int drow, int type)
+        {
+            this.dcol = dcol;
+            this.drow = drow;
+            this.type = type;
+        }
     }
 
-    public struct PieceData
+    public class PieceData
     {
-        public int[]       cells;            // triangle flat indices: (row*gridSize+col)*2 + type
-        public TriOffset[] triangleOffsets;  // per-triangle offset from anchor vertex
-        public int[]       anchorCells;      // anchor triangle flat indices
-        public Color32     color;
-        public int         gridSize;
-        public int         primaryAnchorFlat; // anchor triangle flat index
+        public int[]       Cells             { get; }
+        public TriOffset[] TriangleOffsets   { get; }
+        public int[]       AnchorCells       { get; }
+        public Color32     Color             { get; }
+        public int         GridSize          { get; }
+        public int         PrimaryAnchorFlat { get; }
+
+        public PieceData(int[] cells, TriOffset[] triangleOffsets, int[] anchorCells,
+                         Color32 color, int gridSize, int primaryAnchorFlat)
+        {
+            Cells             = cells;
+            TriangleOffsets   = triangleOffsets;
+            AnchorCells       = anchorCells;
+            Color             = color;
+            GridSize          = gridSize;
+            PrimaryAnchorFlat = primaryAnchorFlat;
+        }
     }
 }

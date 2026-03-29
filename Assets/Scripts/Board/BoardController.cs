@@ -152,9 +152,9 @@ namespace Blokfit.Board
             SnapPoint      anchorVertex,
             out List<(int r, int c, int t)> targets)
         {
-            targets = new List<(int, int, int)>(piece.Data.triangleOffsets.Length);
+            targets = new List<(int, int, int)>(piece.Data.TriangleOffsets.Length);
 
-            foreach (var tri in piece.Data.triangleOffsets)
+            foreach (var tri in piece.Data.TriangleOffsets)
             {
                 int boardCol = anchorVertex.Col + tri.dcol;
                 int boardRow = anchorVertex.Row + tri.drow;

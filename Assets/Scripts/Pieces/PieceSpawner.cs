@@ -34,6 +34,7 @@ namespace Blokfit.Pieces
                     Destroy(piece.gameObject);
             }
             _activePieces.Clear();
+            PieceBehaviour.ResetSortCounter();
         }
 
         private PieceBehaviour SpawnOne(PieceJson json, int gridSize, DifficultyConfig config)
@@ -43,11 +44,6 @@ namespace Blokfit.Pieces
             PieceBehaviour piece = Instantiate(_piecePrefab, _trayRoot);
 
             piece.transform.position = new Vector3(json.spawnX, json.spawnY, 0f);
-
-            if (config.allowRotations && json.solutionRotation != 0f)
-            {
-
-            }
 
             piece.Initialize(
                 data,

@@ -11,14 +11,14 @@ namespace Blokfit.Board
 
         private float _snapThreshold;
 
-        public System.Action<ICommand> OnMoveExecuted;
+        public event System.Action<ICommand> OnMoveExecuted;
 
         public void SetSnapThreshold(float cellSize)
         {
             _snapThreshold = cellSize * 0.5f;
         }
 
-        public bool TrySnap(PieceBehaviour piece, Vector2 dropWorldPos)
+        public bool TrySnap(PieceBehaviour piece)
         {
             if (piece.AnchorTransforms == null || piece.AnchorTransforms.Count == 0)
                 return false;

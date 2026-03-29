@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using Blokfit.Core;
 
@@ -25,47 +24,23 @@ namespace Blokfit.Pieces
                 int type     = triFlat % 2;
                 int col      = cellFlat % gridSize;
                 int row      = cellFlat / gridSize;
-                offsets[i] = new TriOffset
-                {
-                    dcol = col - anchorCol,
-                    drow = row - anchorRow,
-                    type = type,
-                };
+                offsets[i] = new TriOffset(col - anchorCol, row - anchorRow, type);
             }
 
-            return new PieceData
-            {
-                cells             = json.cells,
-                triangleOffsets   = offsets,
-                anchorCells       = json.anchors ?? new[] { json.cells[0] },
-                color             = ParseHexColor(json.color),
-                gridSize          = gridSize,
-                primaryAnchorFlat = primaryAnchorFlat,
-            };
+            return new PieceData(
+                cells:             json.cells,
+                triangleOffsets:   offsets,
+                anchorCells:       json.anchors ?? new[] { json.cells[0] },
+                color:             ParseHexColor(json.color),
+                gridSize:          gridSize,
+                primaryAnchorFlat: primaryAnchorFlat
+            );
         }
 
         private static Color32 ParseHexColor(string hex)
         {
-            if (string.IsNullOrEmpty(hex))
-                return new Color32(200, 200, 200, 255);
-
-            hex = hex.TrimStart('#');
-            if (hex.Length == 6)
-            {
-                byte r = Convert.ToByte(hex.Substring(0, 2), 16);
-                byte g = Convert.ToByte(hex.Substring(2, 2), 16);
-                byte b = Convert.ToByte(hex.Substring(4, 2), 16);
-                return new Color32(r, g, b, 255);
-            }
-            if (hex.Length == 8)
-            {
-                byte r = Convert.ToByte(hex.Substring(0, 2), 16);
-                byte g = Convert.ToByte(hex.Substring(2, 2), 16);
-                byte b = Convert.ToByte(hex.Substring(4, 2), 16);
-                byte a = Convert.ToByte(hex.Substring(6, 2), 16);
-                return new Color32(r, g, b, a);
-            }
-
+            if (!string.IsNullOrEmpty(hex) && ColorUtility.TryParseHtmlString(hex, out Color c))
+                return c;
             return new Color32(200, 200, 200, 255);
         }
     }

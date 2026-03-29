@@ -8,26 +8,17 @@ namespace Blokfit.Board
         public int Col { get; private set; }
         public int Row { get; private set; }
 
-        private bool _isOccupied;
-        public bool IsOccupied
-        {
-            get => _isOccupied;
-            set { _isOccupied = value; RefreshVisual(); }
-        }
-
         public Vector2 WorldPosition => (Vector2)transform.position;
 
         private SpriteRenderer _sr;
 
         private static Sprite _sharedSprite;
-        private static readonly Color FreeColor     = new Color(1f, 1f, 1f, 0.22f);
-        private static readonly Color OccupiedColor = new Color(0f, 0f, 0f, 0f);
+        private static readonly Color FreeColor = new Color(1f, 1f, 1f, 0.22f);
 
         public void Initialize(int col, int row, Vector2 worldPos, float cellSize)
         {
             Col = col;
             Row = row;
-            _isOccupied = false;
             transform.position = new Vector3(worldPos.x, worldPos.y, 0f);
             gameObject.name = $"SnapPoint_{col}_{row}";
 
@@ -45,12 +36,6 @@ namespace Blokfit.Board
             _sr.color        = FreeColor;
 
             transform.localScale = Vector3.one * (cellSize * 0.18f);
-        }
-
-        private void RefreshVisual()
-        {
-            if (_sr != null)
-                _sr.color = _isOccupied ? OccupiedColor : FreeColor;
         }
 
         private static Sprite CreateWhiteSquareSprite()
