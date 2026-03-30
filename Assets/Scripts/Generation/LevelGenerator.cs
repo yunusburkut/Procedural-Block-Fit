@@ -8,8 +8,8 @@ namespace Blokfit.Generation
 {
     public class LevelGenerator : MonoBehaviour
     {
-        [SerializeField] private Rect  _trayRect    = new Rect(-8f, -4f, 3f, 8f);
-        [SerializeField] private float _traySpacing = 2f;
+        [SerializeField] private Transform _trayCenter;
+        [SerializeField] private float     _traySpread = 1f;
 
         public LevelData Generate(DifficultyConfig config, int seed = 0)
         {
@@ -47,7 +47,7 @@ namespace Blokfit.Generation
             {
                 int[] cells  = regions[i];
                 int   anchor = PickPrimaryAnchor(cells);
-                Vector2 spawnPos = GetTraySpawnPosition(i, regions.Count);
+                Vector2 spawnPos = GetTraySpawnPosition(rng);
 
                 pieces[i] = new PieceJson
                 {
@@ -129,10 +129,14 @@ namespace Blokfit.Generation
                 MergeRegions(regions, smallest, nearest);
         }
 
-        private Vector2 GetTraySpawnPosition(int index, int total)
+        private static readonly Vector2 DefaultTrayCenter = new Vector2(0f, -2.4f);
+
+        private Vector2 GetTraySpawnPosition(System.Random rng)
         {
-            float y = _trayRect.center.y + (index - (total - 1) * 0.5f) * _traySpacing;
-            return new Vector2(_trayRect.center.x, y);
+            Vector2 center = _trayCenter != null ? (Vector2)_trayCenter.position : DefaultTrayCenter;
+            float ox = ((float)rng.NextDouble() * 2f - 1f) * _traySpread;
+            float oy = ((float)rng.NextDouble() * 2f - 1f) * _traySpread;
+            return center + new Vector2(ox, oy);
         }
 
         private static readonly string[] PaletteHex =

@@ -14,7 +14,6 @@ namespace Blokfit.Pieces
         [SerializeField] private SnapSystem      _snapSystem;
         [SerializeField] private InputHandler    _inputHandler;
         [SerializeField] private BoardController _board;
-        [SerializeField] private Transform       _trayRoot;
 
         private readonly List<PieceBehaviour> _activePieces = new();
 
@@ -41,7 +40,7 @@ namespace Blokfit.Pieces
         {
             PieceData data = PieceFactory.FromJson(json, gridSize);
 
-            PieceBehaviour piece = Instantiate(_piecePrefab, _trayRoot);
+            PieceBehaviour piece = Instantiate(_piecePrefab, transform);
 
             piece.transform.position = new Vector3(json.spawnX, json.spawnY, 0f);
 
