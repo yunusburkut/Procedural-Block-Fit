@@ -33,8 +33,7 @@ namespace Blokfit.Core
             _mediumConfig = MakeConfig("medium", gridSize: 5, minPieces: 7,  maxPieces: 9,  minPieceSize: 3, maxPieceSize: 5);
             _hardConfig   = MakeConfig("hard",   gridSize: 6, minPieces: 10, maxPieces: 12, minPieceSize: 3, maxPieceSize: 5);
 
-            _uiOverlay.SetRestartCallback(RestartLevel);
-            _uiOverlay.SetNextLevelCallback(RestartLevel);
+            _uiOverlay.SetNextLevelCallback(StartNextLevel);
             _uiOverlay.SetDifficultyCallbacks(
                 easy:   () => BeginLevel(_easyConfig),
                 medium: () => BeginLevel(_mediumConfig),
@@ -54,7 +53,7 @@ namespace Blokfit.Core
             _boardController.OnBoardCompleted -= HandleBoardCompleted;
         }
 
-        public void RestartLevel()
+        public void StartNextLevel()
         {
             if (_currentConfig != null)
                 BeginLevel(_currentConfig);
