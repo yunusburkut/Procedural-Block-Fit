@@ -15,14 +15,16 @@ namespace Blokfit.Board
         private static Sprite _sharedSprite;
         private static readonly Color FreeColor = new Color(1f, 1f, 1f, 0.22f);
 
-        public void Initialize(int col, int row, Vector2 worldPos, float cellSize)
+        public void Initialize(int col, int row, Vector2 worldPos, float cellSize, int gridSize)
         {
             Col = col;
             Row = row;
             transform.position = new Vector3(worldPos.x, worldPos.y, 0f);
             gameObject.name = $"SnapPoint_{col}_{row}";
 
-            BuildVisual(cellSize);
+            bool isEdge = col == 0 || col == gridSize || row == 0 || row == gridSize;
+            if (!isEdge)
+                BuildVisual(cellSize);
         }
 
         private void BuildVisual(float cellSize)

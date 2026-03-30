@@ -66,6 +66,7 @@ namespace Blokfit.Pieces
 
             _originalPosition = transform.position;
             _camera           = Camera.main;
+            _myOrder          = ++_globalSortCounter;
 
             BuildTriangleSprites();
             BuildCollider();
@@ -160,7 +161,7 @@ namespace Blokfit.Pieces
 
                 var sr = cellGo.AddComponent<SpriteRenderer>();
                 sr.sprite       = tri.type == 0 ? _lowerTriSprite : _upperTriSprite;
-                sr.sortingOrder = 0;
+                sr.sortingOrder = _myOrder;
                 sr.SetPropertyBlock(mpb);
 
                 _triRenderers.Add(sr);
@@ -217,7 +218,7 @@ namespace Blokfit.Pieces
                 {
                     // Signed distance from the / diagonal (positive = inside the triangle).
                     float edge  = type == 0 ? (x - y) : (y - x);
-                    float alpha = Mathf.Clamp01(edge + 0.5f);
+                    float alpha = Mathf.Clamp01(edge + 1.0f);
                     px[y * size + x] = new Color(1f, 1f, 1f, alpha);
                 }
             }

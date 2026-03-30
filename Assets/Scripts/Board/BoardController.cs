@@ -9,6 +9,7 @@ namespace Blokfit.Board
     public class BoardController : MonoBehaviour
     {
         [SerializeField] private MeshRenderer _boardRenderer;
+        [SerializeField] private Rect         _boardRect = new Rect(-3.5f, -3.5f, 7f, 7f);
 
         private Transform _snapPointRoot;
 
@@ -35,9 +36,12 @@ namespace Blokfit.Board
 
         public void Initialize(int gridSize, float boardWorldSize)
         {
+            float size = Mathf.Min(_boardRect.width, _boardRect.height);
+            transform.position = new Vector3(_boardRect.center.x, _boardRect.center.y, transform.position.z);
+
             _gridSize        = gridSize;
-            _boardWorldSize  = boardWorldSize;
-            _cellSize        = boardWorldSize / gridSize;
+            _boardWorldSize  = size;
+            _cellSize        = size / gridSize;
             _totalTriangles  = gridSize * gridSize * 2;
             _filledTriangles = 0;
 
@@ -57,12 +61,12 @@ namespace Blokfit.Board
                     go.transform.SetParent(_snapPointRoot, false);
 
                     var sp = go.AddComponent<SnapPoint>();
-                    sp.Initialize(vCol, vRow, worldPos, _cellSize);
+                    sp.Initialize(vCol, vRow, worldPos, _cellSize, gridSize);
                     _snapPoints[vRow, vCol] = sp;
                 }
             }
 
-            SizeBoardQuad(boardWorldSize);
+            SizeBoardQuad(size);
             UpdateBoardShader(gridSize);
         }
 
@@ -190,8 +194,13 @@ namespace Blokfit.Board
 
         private void SizeBoardQuad(float size)
         {
-            if (_boardRenderer != null)
-                _boardRenderer.transform.localScale = new Vector3(size, size, 1f);
+            if (_boardRenderer == null) return;
+            float lineScale = _boardRenderer.sharedMaterial != null
+                ? _boardRenderer.sharedMaterial.GetFloat("_LineScale")
+                : 0.5f;
+            float expanded = size + _cellSize * lineScale * 2f;
+            _boardRenderer.transform.localScale = new Vector3(expanded, expanded, 1f);
+            _boardRenderer.sortingOrder = -10;
         }
 
         private void UpdateBoardShader(int gridSize)

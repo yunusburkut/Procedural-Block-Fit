@@ -29,9 +29,9 @@ namespace Blokfit.Core
 
         private void Awake()
         {
-            _easyConfig   = MakeConfig("easy",   gridSize: 4, minPieces: 5,  maxPieces: 6,  minPieceSize: 2, maxPieceSize: 4);
-            _mediumConfig = MakeConfig("medium", gridSize: 5, minPieces: 7,  maxPieces: 9,  minPieceSize: 3, maxPieceSize: 5);
-            _hardConfig   = MakeConfig("hard",   gridSize: 6, minPieces: 10, maxPieces: 12, minPieceSize: 3, maxPieceSize: 5);
+            _easyConfig   = MakeConfig("easy",   gridSize: 4, minPieces: 5,  maxPieces: 8,  minPieceSize: 2, maxPieceSize: 3);
+            _mediumConfig = MakeConfig("medium", gridSize: 5, minPieces: 7,  maxPieces: 10, minPieceSize: 2, maxPieceSize: 4);
+            _hardConfig   = MakeConfig("hard",   gridSize: 6, minPieces: 9,  maxPieces: 12, minPieceSize: 3, maxPieceSize: 5);
 
             _uiOverlay.SetNextLevelCallback(StartNextLevel);
             _uiOverlay.SetDifficultyCallbacks(

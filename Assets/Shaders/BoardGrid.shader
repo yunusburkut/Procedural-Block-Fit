@@ -2,10 +2,10 @@ Shader "Blokfit/BoardGrid"
 {
     Properties
     {
-        _BaseColor  ("Board Color",  Color)              = (0.12, 0.12, 0.18, 1)
-        _LineColor  ("Line Color",   Color)              = (0.40, 0.40, 0.55, 1)
-        _GridSize   ("Grid Size",    Float)              = 4.0
-        _LineWidth  ("Line Width",   Range(0.001, 0.08)) = 0.025
+        _BaseColor   ("Board Color",  Color)              = (0.14, 0.15, 0.20, 1)
+        _LineColor   ("Line Color",   Color)              = (0.28, 0.30, 0.40, 1)
+        _GridSize    ("Grid Size",    Float)              = 4.0
+        _LineScale   ("Line Scale",   Range(0.05, 2.0))   = 0.5
     }
 
     SubShader
@@ -16,7 +16,7 @@ Shader "Blokfit/BoardGrid"
         Pass
         {
             Name "UnlitForward"
-            Tags { "LightMode" = "UniversalForward" }
+            Tags { "LightMode" = "SRPDefaultUnlit" }
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -36,12 +36,11 @@ Shader "Blokfit/BoardGrid"
                 float2 uv          : TEXCOORD0;
             };
 
-            // SRP Batcher-compatible constant buffer.
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
                 float4 _LineColor;
                 float  _GridSize;
-                float  _LineWidth;
+                float  _LineScale;
             CBUFFER_END
 
             Varyings vert(Attributes IN)
@@ -54,7 +53,16 @@ Shader "Blokfit/BoardGrid"
 
             half4 frag(Varyings IN) : SV_Target
             {
-                return half4(_BaseColor.rgb, 1.0);
+                float2 uv = IN.uv;
+
+                // bw = LineScale cells of border on each side, in UV space of expanded quad.
+                float bw = _LineScale / (_GridSize + 2.0 * _LineScale);
+
+                float onBorder = 1.0 - step(bw, uv.x) * step(bw, uv.y)
+                                     * step(uv.x, 1.0 - bw) * step(uv.y, 1.0 - bw);
+
+                half3 color = lerp(_BaseColor.rgb, _LineColor.rgb, onBorder);
+                return half4(color, 1.0);
             }
             ENDHLSL
         }

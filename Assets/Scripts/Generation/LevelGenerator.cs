@@ -8,9 +8,8 @@ namespace Blokfit.Generation
 {
     public class LevelGenerator : MonoBehaviour
     {
-        [SerializeField] private float _trayStartX  = -5f;
-        [SerializeField] private float _trayStartY  =  0f;
-        [SerializeField] private float _traySpacing = 1.5f;
+        [SerializeField] private Rect  _trayRect    = new Rect(-8f, -4f, 3f, 8f);
+        [SerializeField] private float _traySpacing = 2f;
 
         public LevelData Generate(DifficultyConfig config, int seed = 0)
         {
@@ -132,8 +131,8 @@ namespace Blokfit.Generation
 
         private Vector2 GetTraySpawnPosition(int index, int total)
         {
-            float y = _trayStartY + (index - total * 0.5f) * _traySpacing;
-            return new Vector2(_trayStartX, y);
+            float y = _trayRect.center.y + (index - (total - 1) * 0.5f) * _traySpacing;
+            return new Vector2(_trayRect.center.x, y);
         }
 
         private static readonly string[] PaletteHex =
