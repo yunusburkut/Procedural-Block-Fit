@@ -8,10 +8,12 @@ namespace Blokfit.Input
     public class InputHandler : MonoBehaviour
     {
         public DragState CurrentDrag { get; private set; }
-        public bool IsDragging => CurrentDrag != null;
+        public bool IsDragging  => CurrentDrag != null;
+        public bool IsBlocked   { get; set; }
 
         public bool BeginDrag(PieceBehaviour piece, PointerEventData eventData, Vector2 pointerOffset)
         {
+            if (IsBlocked)   return false;
             if (IsDragging) return false;
 
             CurrentDrag = new DragState(

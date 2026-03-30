@@ -3,6 +3,7 @@ using UnityEngine;
 using Blokfit.Board;
 using Blokfit.Commands;
 using Blokfit.Generation;
+using Blokfit.Input;
 using Blokfit.Pieces;
 using Blokfit.ScriptableObjects;
 using Blokfit.UI;
@@ -16,6 +17,7 @@ namespace Blokfit.Core
         [SerializeField] private PieceSpawner    _pieceSpawner;
         [SerializeField] private SnapSystem      _snapSystem;
         [SerializeField] private UIOverlay       _uiOverlay;
+        [SerializeField] private InputHandler    _inputHandler;
 
         private DifficultyConfig _easyConfig;
         private DifficultyConfig _mediumConfig;
@@ -32,6 +34,7 @@ namespace Blokfit.Core
             _hardConfig   = MakeConfig("hard",   gridSize: 6, minPieces: 10, maxPieces: 12, minPieceSize: 3, maxPieceSize: 5);
 
             _uiOverlay.SetRestartCallback(RestartLevel);
+            _uiOverlay.SetNextLevelCallback(RestartLevel);
             _uiOverlay.SetDifficultyCallbacks(
                 easy:   () => BeginLevel(_easyConfig),
                 medium: () => BeginLevel(_mediumConfig),
@@ -68,6 +71,7 @@ namespace Blokfit.Core
 
         private void BeginLevel(DifficultyConfig config)
         {
+            _inputHandler.IsBlocked = false;
             _currentConfig = config;
             _commandHistory.Clear();
             _moveCount = 0;
@@ -91,6 +95,7 @@ namespace Blokfit.Core
 
         private void HandleBoardCompleted()
         {
+            _inputHandler.IsBlocked = true;
             _uiOverlay.ShowCompletion();
         }
 
