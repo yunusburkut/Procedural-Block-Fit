@@ -25,6 +25,9 @@ namespace Blokfit.Generation
         private readonly int           _total;             // n * n * 2
         private readonly System.Random _rng;
         private readonly List<int>     _neighborBuffer = new List<int>(3);   // reused to avoid per-call allocs
+        private readonly List<int>     _carveResult    = new List<int>();    // reused across CarveRegion calls
+        private readonly Queue<int>    _carveQueue     = new Queue<int>();   // reused across CarveRegion calls
+        private int                    _nextSeedCursor;                      // HasUnassigned never scans backwards
 
         public TrianglePartitioner(int n, System.Random rng)
         {
@@ -41,26 +44,27 @@ namespace Blokfit.Generation
         public int[] CarveRegion(int seedFlat, int targetSize)
         {
             _assigned[seedFlat] = true;
-            var result = new List<int>(targetSize) { seedFlat };
-            var queue  = new Queue<int>();
-            queue.Enqueue(seedFlat);
+            _carveResult.Clear();
+            _carveResult.Add(seedFlat);
+            _carveQueue.Clear();
+            _carveQueue.Enqueue(seedFlat);
 
-            while (queue.Count > 0 && result.Count < targetSize)
+            while (_carveQueue.Count > 0 && _carveResult.Count < targetSize)
             {
-                int current   = queue.Dequeue();
+                int current   = _carveQueue.Dequeue();
                 var neighbors = GetFreeNeighbors(current);
                 Shuffle(neighbors);
 
                 foreach (int neighbor in neighbors)
                 {
-                    if (result.Count >= targetSize) break;
+                    if (_carveResult.Count >= targetSize) break;
                     _assigned[neighbor] = true;
-                    result.Add(neighbor);
-                    queue.Enqueue(neighbor);
+                    _carveResult.Add(neighbor);
+                    _carveQueue.Enqueue(neighbor);
                 }
             }
 
-            return result.ToArray();
+            return _carveResult.ToArray();
         }
 
         /// <summary>
@@ -69,9 +73,10 @@ namespace Blokfit.Generation
         /// </summary>
         public bool HasUnassigned(out int seedFlat)
         {
-            for (int i = 0; i < _total; i++)
+            while (_nextSeedCursor < _total)
             {
-                if (!_assigned[i]) { seedFlat = i; return true; }
+                if (!_assigned[_nextSeedCursor]) { seedFlat = _nextSeedCursor; return true; }
+                _nextSeedCursor++;
             }
             seedFlat = -1;
             return false;

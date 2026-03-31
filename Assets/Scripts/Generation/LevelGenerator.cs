@@ -16,12 +16,18 @@ namespace Blokfit.Generation
         [SerializeField] private Transform _trayCenter;    // pivot for spawn position scatter
         [SerializeField] private float _traySpread = 1f;  // random offset radius
 
+        // Centroid cache: keyed by array reference (reference equality is correct here).
+        // Cleared at the start of each Generate call; invalidated when a region is merged.
+        private readonly Dictionary<int[], Vector2> _centroidCache = new Dictionary<int[], Vector2>();
+
         /// <summary>
         /// Generates a full level layout. Pass <paramref name="seed"/> = 0 for a random seed.
         /// </summary>
         public LevelData Generate(DifficultyConfig config, int seed = 0)
         {
             if (seed == 0) seed = Environment.TickCount;
+
+            _centroidCache.Clear();
 
             var rng = new System.Random(seed);
             int n = config.gridSize;
@@ -100,16 +106,26 @@ namespace Blokfit.Generation
             return new Vector2(sumX / triCells.Length, sumY / triCells.Length);
         }
 
+        private Vector2 GetCentroid(int[] region, int n)
+        {
+            if (!_centroidCache.TryGetValue(region, out var c))
+            {
+                c = ComputeCentroid(region, n);
+                _centroidCache[region] = c;
+            }
+            return c;
+        }
+
         private int[] FindNearestRegion(int[] region, List<int[]> allRegions, int n)
         {
             int[] best = null;
             float bestDist = float.MaxValue;
-            Vector2 c = ComputeCentroid(region, n);
+            Vector2 c = GetCentroid(region, n);
 
             foreach (var other in allRegions)
             {
                 if (other == region) continue;
-                float d = Vector2.SqrMagnitude(c - ComputeCentroid(other, n));
+                float d = Vector2.SqrMagnitude(c - GetCentroid(other, n));
                 if (d < bestDist)
                 {
                     bestDist = d;
@@ -122,6 +138,9 @@ namespace Blokfit.Generation
 
         private void MergeRegions(List<int[]> regions, int[] from, int[] into)
         {
+            _centroidCache.Remove(from);
+            _centroidCache.Remove(into);   // merged array gets a new reference; will recompute lazily
+
             regions.Remove(from);
             int idx = regions.IndexOf(into);
             if (idx < 0) return;
