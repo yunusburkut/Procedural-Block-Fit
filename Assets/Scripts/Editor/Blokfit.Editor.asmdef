@@ -1,0 +1,18 @@
+{
+    "name": "Blokfit.Editor",
+    "rootNamespace": "Blokfit.LevelEditor",
+    "references": [
+        "Blokfit.Scripts"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

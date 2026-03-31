@@ -10,6 +10,7 @@ namespace Blokfit.UI
         [SerializeField] private Button     _easyButton;
         [SerializeField] private Button     _mediumButton;
         [SerializeField] private Button     _hardButton;
+        [SerializeField] private Button     _handmadeButton;     // El Yapımı Level butonu
         [SerializeField] private GameObject _completionPanel;
         [SerializeField] private Button     _nextLevelButton;
         [SerializeField] private TMP_Text   _doneText;
@@ -22,6 +23,7 @@ namespace Blokfit.UI
         private System.Action _onEasy;
         private System.Action _onMedium;
         private System.Action _onHard;
+        private System.Action _onHandmade;
 
         private void Awake()
         {
@@ -29,6 +31,7 @@ namespace Blokfit.UI
             if (_easyButton      != null) _easyButton    .onClick.AddListener(() => _onEasy?.Invoke());
             if (_mediumButton    != null) _mediumButton  .onClick.AddListener(() => _onMedium?.Invoke());
             if (_hardButton      != null) _hardButton    .onClick.AddListener(() => _onHard?.Invoke());
+            if (_handmadeButton  != null) _handmadeButton.onClick.AddListener(() => _onHandmade?.Invoke());
 
             HideCompletion();
         }
@@ -40,6 +43,7 @@ namespace Blokfit.UI
             _onMedium = medium;
             _onHard   = hard;
         }
+        public void SetHandmadeCallback(System.Action callback) => _onHandmade = callback;
 
         public void ShowCompletion()
         {

@@ -9,6 +9,8 @@ using Blokfit.Input;
 using Blokfit.Pieces;
 using Blokfit.ScriptableObjects;
 using Blokfit.UI;
+using System;
+using Random = System.Random;
 
 namespace Blokfit.Core
 {
@@ -31,6 +33,20 @@ namespace Blokfit.Core
         // e.g. https://example.com/levels/easy.json
         [SerializeField] private string _serverBaseUrl = "";
 
+        // ── El yapımı levellar ────────────────────────────────────────────────
+        [Header("El Yapımı Levellar")]
+        [Tooltip("Level Editor'dan export edilen JSON dosyaları.")]
+        [SerializeField] private TextAsset[] _handmadeLevels;
+
+        [Tooltip("spawnX/Y = 0 olan piece'lerin dağıtılacağı merkez nokta.")]
+        [SerializeField] private Transform   _handmadeTrayCenter;
+
+        [Tooltip("Otomatik dağılım yarıçapı (unit).")]
+        [SerializeField] private float       _handmadeTraySpread = 1.2f;
+
+        private int    _handmadeIndex;
+        private Random _handmadeRng = new();
+
         private enum GameState { Idle, LevelComplete }
 
         private DifficultyConfig         _currentConfig;
@@ -43,6 +59,7 @@ namespace Blokfit.Core
                 easy:   () => BeginLevel(_easyConfig),
                 medium: () => BeginLevel(_mediumConfig),
                 hard:   () => BeginLevel(_hardConfig));
+            _uiOverlay.SetHandmadeCallback(LoadHandmadeLevel);
         }
 
         private void Start()
@@ -63,6 +80,68 @@ namespace Blokfit.Core
         {
             if (_currentConfig != null)
                 BeginLevel(_currentConfig);
+        }
+
+        // ── El yapımı level yükleme ───────────────────────────────────────────
+
+        /// <summary>
+        /// Inspector'daki <see cref="_handmadeLevels"/> listesinden sıradaki leveli yükler.
+        /// UIOverlay'deki "El Yapımı" butonu bunu çağırır.
+        /// </summary>
+        public void LoadHandmadeLevel()
+        {
+            if (_handmadeLevels == null || _handmadeLevels.Length == 0)
+            {
+                Debug.LogWarning("[GameManager] _handmadeLevels listesi boş!");
+                return;
+            }
+
+            TextAsset asset = _handmadeLevels[_handmadeIndex % _handmadeLevels.Length];
+            _handmadeIndex++;
+
+            LevelData levelData = LevelSerializer.FromJson(asset.text);
+            ScatterSpawnPositions(levelData);
+
+            SetState(GameState.Idle);
+            _currentConfig = null;
+            _commandHistory.Clear();
+            _uiOverlay.HideCompletion();
+            _pieceSpawner.DestroyAll();
+            _boardController.ResetBoard();
+            ApplyLevel(levelData);
+        }
+
+        /// <summary>
+        /// spawnX ve spawnY ikisi de 0 olan piece'lere otomatik tray konumu atar.
+        /// Level Editor'dan export edilen levellarda bu değerler her zaman 0'dır.
+        /// </summary>
+        private void ScatterSpawnPositions(LevelData data)
+        {
+            if (data.pieces == null) return;
+
+            bool anyZero = false;
+            foreach (var p in data.pieces)
+                if (p.spawnX == 0f && p.spawnY == 0f) { anyZero = true; break; }
+
+            if (!anyZero) return;
+
+            Vector2 center = _handmadeTrayCenter != null
+                ? (Vector2)_handmadeTrayCenter.position
+                : new Vector2(0f, -2.4f);
+
+            int n = data.pieces.Length;
+            for (int i = 0; i < n; i++)
+            {
+                var p = data.pieces[i];
+                if (p.spawnX != 0f || p.spawnY != 0f) continue;
+
+                // Piece'leri yay boyunca dağıt + küçük rastgele kaçınma
+                float angle  = (float)i / n * Mathf.PI * 2f;
+                float rx     = ((float)_handmadeRng.NextDouble() * 2f - 1f) * 0.3f;
+                float ry     = ((float)_handmadeRng.NextDouble() * 2f - 1f) * 0.3f;
+                p.spawnX     = center.x + Mathf.Cos(angle) * _handmadeTraySpread + rx;
+                p.spawnY     = center.y + Mathf.Sin(angle) * _handmadeTraySpread * 0.5f + ry;
+            }
         }
 
         public void UndoLastMove()
