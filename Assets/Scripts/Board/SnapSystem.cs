@@ -31,13 +31,14 @@ namespace Blokfit.Board
             float dist = Vector2.Distance(primaryAnchorWorldPos, candidate.WorldPosition);
             if (dist >= _snapThreshold) return false;
 
-            if (!_board.CanPlace(piece, candidate)) return false;
-
             Vector2 anchorLocalOffset = (Vector2)piece.AnchorTransforms[0].position - (Vector2)piece.transform.position;
             Vector2 targetPiecePos    = candidate.WorldPosition - anchorLocalOffset;
+            Vector2 fromPos           = piece.transform.position;
 
-            var cmd = new PlacePieceCommand(piece, _board, piece.transform.position, targetPiecePos, candidate);
-            cmd.Execute();
+            if (!_board.Place(piece, candidate)) return false;
+            piece.SetPlaced(targetPiecePos);
+
+            var cmd = new PlacePieceCommand(piece, _board, fromPos, targetPiecePos, candidate);
             OnMoveExecuted?.Invoke(cmd);
             return true;
         }

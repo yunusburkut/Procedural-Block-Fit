@@ -31,6 +31,8 @@ namespace Blokfit.Core
         // e.g. https://example.com/levels/easy.json
         [SerializeField] private string _serverBaseUrl = "";
 
+        private enum GameState { Idle, LevelComplete }
+
         private DifficultyConfig         _currentConfig;
         private readonly Stack<ICommand> _commandHistory = new();
 
@@ -72,7 +74,7 @@ namespace Blokfit.Core
 
         private void BeginLevel(DifficultyConfig config)
         {
-            _inputHandler.IsBlocked = false;
+            SetState(GameState.Idle);
             _currentConfig = config;
             _commandHistory.Clear();
             _uiOverlay.HideCompletion();
@@ -106,18 +108,23 @@ namespace Blokfit.Core
         {
             _boardController.Initialize(levelData.grid.size);
             _snapSystem.SetSnapThreshold(_boardController.CellSize);
-            _pieceSpawner.SpawnAll(levelData.pieces, levelData.grid.size, _currentConfig);
+            _pieceSpawner.SpawnAll(levelData.pieces, levelData.grid.size);
         }
 
         private void HandleBoardCompleted()
         {
-            _inputHandler.IsBlocked = true;
+            SetState(GameState.LevelComplete);
             _uiOverlay.ShowCompletion();
         }
 
         private void HandleMoveExecuted(ICommand cmd)
         {
             _commandHistory.Push(cmd);
+        }
+
+        private void SetState(GameState state)
+        {
+            _inputHandler.IsBlocked = (state == GameState.LevelComplete);
         }
     }
 }

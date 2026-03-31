@@ -21,6 +21,9 @@ namespace Blokfit.Board
         private bool[,,]           _occupiedTriangles;
         private PieceBehaviour[,,] _occupants;
 
+        // Reverse lookup: piece → its occupied triangles (for O(1) Lift)
+        private readonly Dictionary<PieceBehaviour, List<(int r, int c, int t)>> _pieceOccupancy = new();
+
         private int   _gridSize;
         private float _cellSize;
         private float _boardWorldSize;
@@ -28,7 +31,8 @@ namespace Blokfit.Board
         private int   _filledTriangles;
 
         private MaterialPropertyBlock _boardMpb;
-        private static readonly int GridSizeProp = Shader.PropertyToID("_GridSize");
+        private static readonly int GridSizeProp  = Shader.PropertyToID("_GridSize");
+        private static readonly int LineScaleProp = Shader.PropertyToID("_LineScale");
 
         public int   GridSize => _gridSize;
         public float CellSize => _cellSize;
@@ -82,6 +86,7 @@ namespace Blokfit.Board
                     }
 
             _filledTriangles = 0;
+            _pieceOccupancy.Clear();
         }
 
         public SnapPoint GetNearestFreeSnapPoint(Vector2 worldPos)
@@ -104,14 +109,9 @@ namespace Blokfit.Board
             return best;
         }
 
-        public bool CanPlace(PieceBehaviour piece, SnapPoint anchorVertex)
+        public bool Place(PieceBehaviour piece, SnapPoint anchorVertex)
         {
-            return GetTargetTriangles(piece, anchorVertex, out _);
-        }
-
-        public void Place(PieceBehaviour piece, SnapPoint anchorVertex)
-        {
-            if (!GetTargetTriangles(piece, anchorVertex, out var targets)) return;
+            if (!GetTargetTriangles(piece, anchorVertex, out var targets)) return false;
 
             foreach ((int r, int c, int t) in targets)
             {
@@ -119,26 +119,24 @@ namespace Blokfit.Board
                 _occupants[r, c, t]         = piece;
             }
 
+            _pieceOccupancy[piece] = targets;
             _filledTriangles += targets.Count;
             CheckCompletion();
+            return true;
         }
 
         public void Lift(PieceBehaviour piece)
         {
-            if (_occupiedTriangles == null) return;
+            if (!_pieceOccupancy.TryGetValue(piece, out var cells)) return;
 
-            int freed = 0;
-            for (int r = 0; r < _gridSize; r++)
-                for (int c = 0; c < _gridSize; c++)
-                    for (int t = 0; t < 2; t++)
-                        if (_occupants[r, c, t] == piece)
-                        {
-                            _occupiedTriangles[r, c, t] = false;
-                            _occupants[r, c, t]         = null;
-                            freed++;
-                        }
+            foreach ((int r, int c, int t) in cells)
+            {
+                _occupiedTriangles[r, c, t] = false;
+                _occupants[r, c, t]         = null;
+            }
 
-            _filledTriangles -= freed;
+            _filledTriangles -= cells.Count;
+            _pieceOccupancy.Remove(piece);
         }
 
         /// <summary>World position of grid vertex (vCol, vRow).</summary>
@@ -195,7 +193,7 @@ namespace Blokfit.Board
         {
             if (_boardRenderer == null) return;
             float lineScale = _boardRenderer.sharedMaterial != null
-                ? _boardRenderer.sharedMaterial.GetFloat("_LineScale")
+                ? _boardRenderer.sharedMaterial.GetFloat(LineScaleProp)
                 : 0.5f;
             float expanded = size + _cellSize * lineScale * 2f;
             _boardRenderer.transform.localScale = new Vector3(expanded, expanded, 1f);

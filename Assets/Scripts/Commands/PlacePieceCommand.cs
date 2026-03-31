@@ -29,8 +29,8 @@ namespace Blokfit.Commands
 
         public void Execute()
         {
-            _board.Place(_piece, _snapPoint);
-            _piece.SetPlaced(_toPosition);
+            if (_board.Place(_piece, _snapPoint))
+                _piece.SetPlaced(_toPosition);
         }
 
         public void Undo()

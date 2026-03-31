@@ -24,6 +24,7 @@ namespace Blokfit.Generation
         private readonly int           _n;
         private readonly int           _total;
         private readonly System.Random _rng;
+        private readonly List<int>     _neighborBuffer = new List<int>(3);
 
         public TrianglePartitioner(int n, System.Random rng)
         {
@@ -75,22 +76,22 @@ namespace Blokfit.Generation
             int col      = cellFlat % _n;
             int row      = cellFlat / _n;
 
-            var neighbors = new List<int>(3);
+            _neighborBuffer.Clear();
 
             if (type == 0) // lower → neighbours are all upper tris
             {
-                AddIfFree(neighbors, col,     row,     1); // same cell, diagonal
-                if (row > 0)     AddIfFree(neighbors, col,     row - 1, 1); // below
-                if (col < _n-1)  AddIfFree(neighbors, col + 1, row,     1); // right
+                AddIfFree(_neighborBuffer, col,     row,     1); // same cell, diagonal
+                if (row > 0)     AddIfFree(_neighborBuffer, col,     row - 1, 1); // below
+                if (col < _n-1)  AddIfFree(_neighborBuffer, col + 1, row,     1); // right
             }
             else           // upper → neighbours are all lower tris
             {
-                AddIfFree(neighbors, col,     row,     0); // same cell, diagonal
-                if (row < _n-1)  AddIfFree(neighbors, col,     row + 1, 0); // above
-                if (col > 0)     AddIfFree(neighbors, col - 1, row,     0); // left
+                AddIfFree(_neighborBuffer, col,     row,     0); // same cell, diagonal
+                if (row < _n-1)  AddIfFree(_neighborBuffer, col,     row + 1, 0); // above
+                if (col > 0)     AddIfFree(_neighborBuffer, col - 1, row,     0); // left
             }
 
-            return neighbors;
+            return _neighborBuffer;
         }
 
         private void AddIfFree(List<int> list, int col, int row, int type)

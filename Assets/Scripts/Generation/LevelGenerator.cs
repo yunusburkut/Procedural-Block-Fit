@@ -9,14 +9,14 @@ namespace Blokfit.Generation
     public class LevelGenerator : MonoBehaviour
     {
         [SerializeField] private Transform _trayCenter;
-        [SerializeField] private float     _traySpread = 1f;
+        [SerializeField] private float _traySpread = 1f;
 
         public LevelData Generate(DifficultyConfig config, int seed = 0)
         {
             if (seed == 0) seed = Environment.TickCount;
 
             var rng = new System.Random(seed);
-            int n   = config.gridSize;
+            int n = config.gridSize;
 
             var partitioner = new TrianglePartitioner(n, rng);
 
@@ -28,7 +28,7 @@ namespace Blokfit.Generation
             while (partitioner.HasUnassigned(out int seedFlat))
             {
                 int targetSize = rng.Next(minTriSize, maxTriSize + 1);
-                int[] region   = partitioner.CarveRegion(seedFlat, targetSize);
+                int[] region = partitioner.CarveRegion(seedFlat, targetSize);
                 regions.Add(region);
 
                 if (region.Length < minTriSize && regions.Count > config.minPieces)
@@ -45,23 +45,23 @@ namespace Blokfit.Generation
             var pieces = new PieceJson[regions.Count];
             for (int i = 0; i < regions.Count; i++)
             {
-                int[] cells  = regions[i];
-                int   anchor = PickPrimaryAnchor(cells);
+                int[] cells = regions[i];
+                int anchor = PickPrimaryAnchor(cells);
                 Vector2 spawnPos = GetTraySpawnPosition(rng);
 
                 pieces[i] = new PieceJson
                 {
-                    cells   = cells,
-                    color   = RandomColor(rng),
+                    cells = cells,
+                    color = RandomColor(rng),
                     anchors = new[] { anchor },
-                    spawnX  = spawnPos.x,
-                    spawnY  = spawnPos.y,
+                    spawnX = spawnPos.x,
+                    spawnY = spawnPos.y,
                 };
             }
 
             return new LevelData
             {
-                grid   = new GridData { size = n },
+                grid = new GridData { size = n },
                 pieces = pieces,
             };
         }
@@ -71,7 +71,8 @@ namespace Blokfit.Generation
         {
             int best = cells[0];
             foreach (int c in cells)
-                if (c < best) best = c;
+                if (c < best)
+                    best = c;
             return best;
         }
 
@@ -84,21 +85,27 @@ namespace Blokfit.Generation
                 sumX += cellFlat % n;
                 sumY += cellFlat / n;
             }
+
             return new Vector2(sumX / triCells.Length, sumY / triCells.Length);
         }
 
         private int[] FindNearestRegion(int[] region, List<int[]> allRegions, int n)
         {
-            int[]   best     = null;
-            float   bestDist = float.MaxValue;
-            Vector2 c        = ComputeCentroid(region, n);
+            int[] best = null;
+            float bestDist = float.MaxValue;
+            Vector2 c = ComputeCentroid(region, n);
 
             foreach (var other in allRegions)
             {
                 if (other == region) continue;
                 float d = Vector2.SqrMagnitude(c - ComputeCentroid(other, n));
-                if (d < bestDist) { bestDist = d; best = other; }
+                if (d < bestDist)
+                {
+                    bestDist = d;
+                    best = other;
+                }
             }
+
             return best;
         }
 
@@ -118,7 +125,8 @@ namespace Blokfit.Generation
         {
             int[] smallest = regions[0];
             foreach (var r in regions)
-                if (r.Length < smallest.Length) smallest = r;
+                if (r.Length < smallest.Length)
+                    smallest = r;
 
             int[] nearest = FindNearestRegion(smallest, regions, n);
             if (nearest != null)

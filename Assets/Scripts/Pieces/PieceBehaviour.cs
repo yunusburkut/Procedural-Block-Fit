@@ -4,7 +4,6 @@ using UnityEngine.EventSystems;
 using DG.Tweening;
 using Blokfit.Board;
 using Blokfit.Input;
-using Blokfit.ScriptableObjects;
 
 namespace Blokfit.Pieces
 {
@@ -21,7 +20,6 @@ namespace Blokfit.Pieces
         private SnapSystem        _snapSystem;
         private InputHandler      _inputHandler;
         private BoardController   _board;
-        private DifficultyConfig  _config;
 
         private PolygonCollider2D _collider;
 
@@ -31,8 +29,13 @@ namespace Blokfit.Pieces
 
         private static readonly int ColorProp = Shader.PropertyToID("_Color");
 
-        private const int   DragSortBoost = 1000;
-        private const float DragScale     = 1.1f;
+        private const int   DragSortBoost   = 1000;
+        private const float DragScale       = 1.1f;
+        private const float AnimInDuration  = 0.55f;
+        private const float AnimInStagger   = 0.12f;
+        private const float AnimInStartY    = 8f;
+        private const float SnapDuration    = 0.15f;
+        private const float ReturnDuration  = 0.2f;
 
         private int _myOrder;
 
@@ -45,14 +48,12 @@ namespace Blokfit.Pieces
         public void Initialize(
             PieceData         data,
             float             cellSize,
-            DifficultyConfig  config,
             SnapSystem        snapSystem,
             InputHandler      inputHandler,
             BoardController   board)
         {
             Data          = data;
             _cellSize     = cellSize;
-            _config       = config;
             _snapSystem   = snapSystem;
             _inputHandler = inputHandler;
             _board        = board;
@@ -66,13 +67,13 @@ namespace Blokfit.Pieces
             BuildAnchorTransforms();
         }
 
-        public void AnimateIn(int index, float startY = 8f)
+        public void AnimateIn(int index, float startY = AnimInStartY)
         {
             Vector3 target = transform.position;
             transform.position = new Vector3(target.x, startY, target.z);
 
-            float delay = index * 0.12f;
-            transform.DOMove(target, 0.55f)
+            float delay = index * AnimInStagger;
+            transform.DOMove(target, AnimInDuration)
                 .SetDelay(delay)
                 .SetEase(Ease.OutBounce);
         }
@@ -81,32 +82,19 @@ namespace Blokfit.Pieces
         {
             SetDragging(false);
             transform.DOKill();
-            transform.DOMove(snapWorldPos, 0.15f).SetEase(Ease.OutQuad);
+            transform.DOMove(snapWorldPos, SnapDuration).SetEase(Ease.OutQuad);
         }
 
+        /// <param name="originalPos">Position captured at drag-start time (not necessarily the tray spawn position).</param>
         public void ReturnToTray(Vector2 originalPos)
         {
             SetDragging(false);
             transform.DOKill();
-            transform.DOMove(originalPos, 0.2f).SetEase(Ease.OutQuad);
-        }
-
-        // Visual rotation only – triangle offsets are not updated.
-        public void ApplyRotation(float degrees)
-        {
-            transform.Rotate(0f, 0f, degrees);
+            transform.DOMove(originalPos, ReturnDuration).SetEase(Ease.OutQuad);
         }
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (_inputHandler.IsDragging && _inputHandler.CurrentDrag.Piece == this
-                && eventData.pointerId != _inputHandler.CurrentDrag.PointerId)
-            {
-                if (_config.allowRotations)
-                    ApplyRotation(90f);
-                return;
-            }
-
             if (!_inputHandler.BeginDrag(this, eventData))
                 return;
 
@@ -221,7 +209,6 @@ namespace Blokfit.Pieces
             {
                 for (int x = 0; x < size; x++)
                 {
-                    // Signed distance from the / diagonal (positive = inside the triangle).
                     float edge  = type == 0 ? (x - y) : (y - x);
                     float alpha = Mathf.Clamp01(edge + 1.0f);
                     px[y * size + x] = new Color(1f, 1f, 1f, alpha);
@@ -230,8 +217,6 @@ namespace Blokfit.Pieces
             tex.SetPixels(px);
             tex.Apply();
 
-            // PPU = size → 1 world unit = full sprite width.
-            // Pivot (0,0) = bottom-left corner of the texture.
             return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0f, 0f), size);
         }
 

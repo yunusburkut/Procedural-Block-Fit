@@ -1,13 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using Blokfit.Board;
 using Blokfit.Core;
 using Blokfit.Input;
-using Blokfit.ScriptableObjects;
 
 namespace Blokfit.Pieces
 {
-
     public class PieceSpawner : MonoBehaviour
     {
         [SerializeField] private PieceBehaviour  _piecePrefab;
@@ -17,11 +15,11 @@ namespace Blokfit.Pieces
 
         private readonly List<PieceBehaviour> _activePieces = new();
 
-        public void SpawnAll(PieceJson[] pieceJsons, int gridSize, DifficultyConfig config)
+        public void SpawnAll(PieceJson[] pieceJsons, int gridSize)
         {
             for (int i = 0; i < pieceJsons.Length; i++)
             {
-                var piece = SpawnOne(pieceJsons[i], gridSize, config);
+                var piece = SpawnOne(pieceJsons[i], gridSize);
                 _activePieces.Add(piece);
                 piece.AnimateIn(i);
             }
@@ -38,18 +36,16 @@ namespace Blokfit.Pieces
             PieceSortOrder.Reset();
         }
 
-        private PieceBehaviour SpawnOne(PieceJson json, int gridSize, DifficultyConfig config)
+        private PieceBehaviour SpawnOne(PieceJson json, int gridSize)
         {
             PieceData data = PieceFactory.FromJson(json, gridSize);
 
             PieceBehaviour piece = Instantiate(_piecePrefab, transform);
-
             piece.transform.position = new Vector3(json.spawnX, json.spawnY, 0f);
 
             piece.Initialize(
                 data,
                 _board.CellSize,
-                config,
                 _snapSystem,
                 _inputHandler,
                 _board);

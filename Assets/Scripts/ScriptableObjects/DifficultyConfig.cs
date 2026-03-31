@@ -11,6 +11,5 @@ namespace Blokfit.ScriptableObjects
         public int    maxPieces     = 6;
         public int    minPieceSize  = 3;
         public int    maxPieceSize  = 4;
-        public bool   allowRotations = false;
     }
 }

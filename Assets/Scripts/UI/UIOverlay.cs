@@ -1,4 +1,3 @@
-﻿
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
@@ -16,6 +15,9 @@ namespace Blokfit.UI
         [SerializeField] private TMP_Text   _doneText;
         [SerializeField] private TMP_Text   _tapToContinueText;
 
+        private const float FadeDuration = 0.5f;
+        private const float TapDelay     = 0.4f;
+
         private System.Action _onNextLevel;
         private System.Action _onEasy;
         private System.Action _onMedium;
@@ -24,9 +26,9 @@ namespace Blokfit.UI
         private void Awake()
         {
             if (_nextLevelButton != null) _nextLevelButton.onClick.AddListener(() => _onNextLevel?.Invoke());
-            if (_easyButton     != null) _easyButton    .onClick.AddListener(() => _onEasy?.Invoke());
-            if (_mediumButton   != null) _mediumButton  .onClick.AddListener(() => _onMedium?.Invoke());
-            if (_hardButton     != null) _hardButton    .onClick.AddListener(() => _onHard?.Invoke());
+            if (_easyButton      != null) _easyButton    .onClick.AddListener(() => _onEasy?.Invoke());
+            if (_mediumButton    != null) _mediumButton  .onClick.AddListener(() => _onMedium?.Invoke());
+            if (_hardButton      != null) _hardButton    .onClick.AddListener(() => _onHard?.Invoke());
 
             HideCompletion();
         }
@@ -43,25 +45,30 @@ namespace Blokfit.UI
         {
             if (_completionPanel == null) return;
             _completionPanel.SetActive(true);
-
-            if (_doneText != null)
-            {
-                var c = _doneText.color; c.a = 0f; _doneText.color = c;
-                _doneText.DOFade(1f, 0.5f).SetEase(Ease.OutQuad);
-            }
-            if (_tapToContinueText != null)
-            {
-                var c = _tapToContinueText.color; c.a = 0f; _tapToContinueText.color = c;
-                _tapToContinueText.DOFade(1f, 0.5f).SetDelay(0.4f).SetEase(Ease.OutQuad);
-            }
+            FadeInText(_doneText,         FadeDuration);
+            FadeInText(_tapToContinueText, FadeDuration, TapDelay);
         }
 
         public void HideCompletion()
         {
             if (_completionPanel == null) return;
-            if (_doneText          != null) { _doneText.DOKill();          var c = _doneText.color;         c.a = 0f; _doneText.color         = c; }
-            if (_tapToContinueText != null) { _tapToContinueText.DOKill(); var c = _tapToContinueText.color; c.a = 0f; _tapToContinueText.color = c; }
+            KillAndHideText(_doneText);
+            KillAndHideText(_tapToContinueText);
             _completionPanel.SetActive(false);
+        }
+
+        private static void FadeInText(TMP_Text text, float duration, float delay = 0f)
+        {
+            if (text == null) return;
+            var c = text.color; c.a = 0f; text.color = c;
+            text.DOFade(1f, duration).SetDelay(delay).SetEase(Ease.OutQuad);
+        }
+
+        private static void KillAndHideText(TMP_Text text)
+        {
+            if (text == null) return;
+            text.DOKill();
+            var c = text.color; c.a = 0f; text.color = c;
         }
     }
 }

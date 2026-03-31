@@ -8,8 +8,9 @@ namespace Blokfit.Board
         public int Col { get; private set; }
         public int Row { get; private set; }
 
-        public Vector2 WorldPosition => (Vector2)transform.position;
+        public Vector2 WorldPosition => _worldPos;
 
+        private Vector2        _worldPos;
         private SpriteRenderer _sr;
 
         private static Sprite _sharedSprite;
@@ -17,8 +18,9 @@ namespace Blokfit.Board
 
         public void Initialize(int col, int row, Vector2 worldPos, float cellSize, int gridSize)
         {
-            Col = col;
-            Row = row;
+            Col       = col;
+            Row       = row;
+            _worldPos  = worldPos;
             transform.position = new Vector3(worldPos.x, worldPos.y, 0f);
             gameObject.name = $"SnapPoint_{col}_{row}";
 

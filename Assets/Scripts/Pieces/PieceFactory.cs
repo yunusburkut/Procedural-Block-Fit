@@ -32,11 +32,13 @@ namespace Blokfit.Pieces
             );
         }
 
+        private static readonly Color32 FallbackColor = new Color32(200, 200, 200, 255);
+
         private static Color32 ParseHexColor(string hex)
         {
             if (!string.IsNullOrEmpty(hex) && ColorUtility.TryParseHtmlString(hex, out Color c))
                 return c;
-            return new Color32(200, 200, 200, 255);
+            return FallbackColor;
         }
     }
 }
