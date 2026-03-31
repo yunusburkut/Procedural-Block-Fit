@@ -23,10 +23,8 @@ namespace Blokfit.Pieces
         private BoardController   _board;
         private DifficultyConfig  _config;
 
-        private SpriteRenderer    _spriteRenderer;
         private PolygonCollider2D _collider;
 
-        private Vector2 _originalPosition;
         private Vector2 _dragOffset;
         private float   _cellSize;
         private Camera  _camera;
@@ -36,10 +34,7 @@ namespace Blokfit.Pieces
         private const int   DragSortBoost = 1000;
         private const float DragScale     = 1.1f;
 
-        private static int _globalSortCounter = 0;
-        private int _myOrder = 0;
-
-        public static void ResetSortCounter() => _globalSortCounter = 0;
+        private int _myOrder;
 
         // Shared triangle sprites (lower = type 0, upper = type 1)
         private static Sprite _lowerTriSprite;
@@ -62,12 +57,9 @@ namespace Blokfit.Pieces
             _inputHandler = inputHandler;
             _board        = board;
 
-            _spriteRenderer = GetComponent<SpriteRenderer>();
-            _collider       = GetComponent<PolygonCollider2D>();
-
-            _originalPosition = transform.position;
-            _camera           = Camera.main;
-            _myOrder          = ++_globalSortCounter;
+            _collider = GetComponent<PolygonCollider2D>();
+            _camera   = Camera.main;
+            _myOrder = PieceSortOrder.Next();
 
             BuildTriangleSprites();
             BuildCollider();
@@ -115,16 +107,15 @@ namespace Blokfit.Pieces
                 return;
             }
 
-            Vector2 worldPoint = ScreenToWorld(eventData.position);
-            Vector2 offset     = (Vector2)transform.position - worldPoint;
-
-            if (!_inputHandler.BeginDrag(this, eventData, offset))
+            if (!_inputHandler.BeginDrag(this, eventData))
                 return;
 
-            _myOrder = ++_globalSortCounter;
+            Vector2 worldPoint = ScreenToWorld(eventData.position);
+            _dragOffset = (Vector2)transform.position - worldPoint;
+
+            _myOrder = PieceSortOrder.Next();
             _board.Lift(this);
             SetDragging(true);
-            _dragOffset = offset;
         }
 
         public void OnDrag(PointerEventData eventData)
@@ -137,7 +128,7 @@ namespace Blokfit.Pieces
         public void OnPointerUp(PointerEventData eventData)
         {
             if (_inputHandler.CurrentDrag?.Piece != this) return;
-            _snapSystem.TrySnap(this);
+            _ = _snapSystem.TrySnap(this);
             SetDragging(false);
             _inputHandler.EndDrag();
         }
@@ -156,7 +147,7 @@ namespace Blokfit.Pieces
 
         private void BuildTriangleSprites()
         {
-            _spriteRenderer.enabled = false;
+            GetComponent<SpriteRenderer>().enabled = false;
 
             if (_lowerTriSprite == null) _lowerTriSprite = CreateTriSprite(0);
             if (_upperTriSprite == null) _upperTriSprite = CreateTriSprite(1);

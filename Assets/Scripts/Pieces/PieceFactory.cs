@@ -11,7 +11,6 @@ namespace Blokfit.Pieces
                 ? json.anchors[0]
                 : json.cells[0];
 
-            // Anchor vertex = bottom-left corner of the anchor triangle's cell.
             int anchorCellFlat = primaryAnchorFlat / 2;
             int anchorCol      = anchorCellFlat % gridSize;
             int anchorRow      = anchorCellFlat / gridSize;
@@ -28,12 +27,8 @@ namespace Blokfit.Pieces
             }
 
             return new PieceData(
-                cells:             json.cells,
-                triangleOffsets:   offsets,
-                anchorCells:       json.anchors ?? new[] { json.cells[0] },
-                color:             ParseHexColor(json.color),
-                gridSize:          gridSize,
-                primaryAnchorFlat: primaryAnchorFlat
+                triangleOffsets: offsets,
+                color:           ParseHexColor(json.color)
             );
         }
 

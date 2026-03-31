@@ -372,6 +372,10 @@ MonoBehaviour:
   _snapSystem: {fileID: 79420868}
   _uiOverlay: {fileID: 1355630374}
   _inputHandler: {fileID: 1539406123}
+  _easyConfig: {fileID: 11400000, guid: 0b1fecc25cefea84d888be0ae11873df, type: 2}
+  _mediumConfig: {fileID: 11400000, guid: 45691e4dc59f623459df638d82284350, type: 2}
+  _hardConfig: {fileID: 11400000, guid: b21a1297f9a8bb94ea6bc6be76e999e6, type: 2}
+  _serverBaseUrl: 
 --- !u!4 &446130779
 Transform:
   m_ObjectHideFlags: 0
@@ -1600,7 +1604,8 @@ MonoBehaviour:
   _hardButton: {fileID: 248303101}
   _completionPanel: {fileID: 970987256}
   _nextLevelButton: {fileID: 921316992}
-  _moveCounterText: {fileID: 0}
+  _doneText: {fileID: 911538802}
+  _tapToContinueText: {fileID: 2003372126}
 --- !u!114 &1355630375
 MonoBehaviour:
   m_ObjectHideFlags: 0

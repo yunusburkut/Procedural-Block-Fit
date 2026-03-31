@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Blokfit.Pieces;
-using Blokfit.ScriptableObjects;
 
 namespace Blokfit.Board
 {
@@ -34,7 +33,7 @@ namespace Blokfit.Board
         public int   GridSize => _gridSize;
         public float CellSize => _cellSize;
 
-        public void Initialize(int gridSize, float boardWorldSize)
+        public void Initialize(int gridSize)
         {
             float size = Mathf.Min(_boardRect.width, _boardRect.height);
             transform.position = new Vector3(_boardRect.center.x, _boardRect.center.y, transform.position.z);

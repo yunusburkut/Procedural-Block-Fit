@@ -17,8 +17,6 @@ namespace Blokfit.Pieces
 
         private readonly List<PieceBehaviour> _activePieces = new();
 
-        public IReadOnlyList<PieceBehaviour> ActivePieces => _activePieces;
-
         public void SpawnAll(PieceJson[] pieceJsons, int gridSize, DifficultyConfig config)
         {
             for (int i = 0; i < pieceJsons.Length; i++)
@@ -37,7 +35,7 @@ namespace Blokfit.Pieces
                     Destroy(piece.gameObject);
             }
             _activePieces.Clear();
-            PieceBehaviour.ResetSortCounter();
+            PieceSortOrder.Reset();
         }
 
         private PieceBehaviour SpawnOne(PieceJson json, int gridSize, DifficultyConfig config)

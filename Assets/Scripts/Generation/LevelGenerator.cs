@@ -31,7 +31,7 @@ namespace Blokfit.Generation
                 int[] region   = partitioner.CarveRegion(seedFlat, targetSize);
                 regions.Add(region);
 
-                if (region.Length < minTriSize && regions.Count > 1)
+                if (region.Length < minTriSize && regions.Count > config.minPieces)
                 {
                     int[] nearest = FindNearestRegion(region, regions, n);
                     if (nearest != null)
@@ -51,22 +51,18 @@ namespace Blokfit.Generation
 
                 pieces[i] = new PieceJson
                 {
-                    id               = i,
-                    cells            = cells,
-                    color            = RandomColor(rng),
-                    anchors          = new[] { anchor },
-                    spawnX           = spawnPos.x,
-                    spawnY           = spawnPos.y,
-                    solutionRotation = 0f,
+                    cells   = cells,
+                    color   = RandomColor(rng),
+                    anchors = new[] { anchor },
+                    spawnX  = spawnPos.x,
+                    spawnY  = spawnPos.y,
                 };
             }
 
             return new LevelData
             {
-                version    = 1,
-                difficulty = config.difficultyName,
-                grid       = new GridData { size = n },
-                pieces     = pieces,
+                grid   = new GridData { size = n },
+                pieces = pieces,
             };
         }
 

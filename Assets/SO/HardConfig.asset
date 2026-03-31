@@ -10,15 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44888f407d0c1df46a3a247257ccdca0, type: 3}
-  m_Name: DifficultyConfigSO
+  m_Name: HardConfig
   m_EditorClassIdentifier: Blokfit.Scripts::Blokfit.ScriptableObjects.DifficultyConfig
-  difficultyName: medium
-  gridSize: 10
-  boardWorldSize: 6
-  minPieces: 13
-  maxPieces: 15
-  minPieceSize: 14
-  maxPieceSize: 15
+  difficultyName: 
+  gridSize: 6
+  minPieces: 8
+  maxPieces: 12
+  minPieceSize: 3
+  maxPieceSize: 5
   allowRotations: 0
-  minAnchors: 1
-  maxAnchors: 1

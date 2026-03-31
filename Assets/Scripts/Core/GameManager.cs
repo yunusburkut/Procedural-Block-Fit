@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 using Blokfit.Board;
 using Blokfit.Commands;
 using Blokfit.Generation;
@@ -19,19 +21,21 @@ namespace Blokfit.Core
         [SerializeField] private UIOverlay       _uiOverlay;
         [SerializeField] private InputHandler    _inputHandler;
 
-        private DifficultyConfig _easyConfig;
-        private DifficultyConfig _mediumConfig;
-        private DifficultyConfig _hardConfig;
+        [SerializeField] private DifficultyConfig _easyConfig;
+        [SerializeField] private DifficultyConfig _mediumConfig;
+        [SerializeField] private DifficultyConfig _hardConfig;
+
+        // Optional: set a base URL to download levels from a server.
+        // Leave empty to always generate procedurally.
+        // Expected format: {_serverBaseUrl}/{difficultyName}.json
+        // e.g. https://example.com/levels/easy.json
+        [SerializeField] private string _serverBaseUrl = "";
 
         private DifficultyConfig         _currentConfig;
         private readonly Stack<ICommand> _commandHistory = new();
 
         private void Awake()
         {
-            _easyConfig   = MakeConfig("easy",   gridSize: 4, minPieces: 5,  maxPieces: 8,  minPieceSize: 2, maxPieceSize: 3);
-            _mediumConfig = MakeConfig("medium", gridSize: 5, minPieces: 7,  maxPieces: 10, minPieceSize: 2, maxPieceSize: 4);
-            _hardConfig   = MakeConfig("hard",   gridSize: 6, minPieces: 9,  maxPieces: 12, minPieceSize: 3, maxPieceSize: 5);
-
             _uiOverlay.SetNextLevelCallback(StartNextLevel);
             _uiOverlay.SetDifficultyCallbacks(
                 easy:   () => BeginLevel(_easyConfig),
@@ -42,7 +46,7 @@ namespace Blokfit.Core
         private void Start()
         {
             _boardController.OnBoardCompleted += HandleBoardCompleted;
-            _snapSystem.OnMoveExecuted         += HandleMoveExecuted;
+            _snapSystem.OnMoveExecuted        += HandleMoveExecuted;
 
             BeginLevel(_easyConfig);
         }
@@ -50,6 +54,7 @@ namespace Blokfit.Core
         private void OnDestroy()
         {
             _boardController.OnBoardCompleted -= HandleBoardCompleted;
+            _snapSystem.OnMoveExecuted        -= HandleMoveExecuted;
         }
 
         public void StartNextLevel()
@@ -75,16 +80,33 @@ namespace Blokfit.Core
             _pieceSpawner.DestroyAll();
             _boardController.ResetBoard();
 
-            LoadLevel(config);
+            if (!string.IsNullOrEmpty(_serverBaseUrl))
+                StartCoroutine(LoadFromServer(config));
+            else
+                ApplyLevel(_levelGenerator.Generate(config));
         }
 
-        private void LoadLevel(DifficultyConfig config)
+        private IEnumerator LoadFromServer(DifficultyConfig config)
         {
-            LevelData levelData = _levelGenerator.Generate(config);
+            string url = $"{_serverBaseUrl}/{config.difficultyName}.json";
 
-            _boardController.Initialize(levelData.grid.size, config.boardWorldSize);
+            using var req = UnityWebRequest.Get(url);
+            yield return req.SendWebRequest();
+
+            if (req.result == UnityWebRequest.Result.Success)
+                ApplyLevel(LevelSerializer.FromJson(req.downloadHandler.text));
+            else
+            {
+                Debug.LogWarning($"[GameManager] Server fetch failed ({req.error}), falling back to procedural.");
+                ApplyLevel(_levelGenerator.Generate(config));
+            }
+        }
+
+        private void ApplyLevel(LevelData levelData)
+        {
+            _boardController.Initialize(levelData.grid.size);
             _snapSystem.SetSnapThreshold(_boardController.CellSize);
-            _pieceSpawner.SpawnAll(levelData.pieces, levelData.grid.size, config);
+            _pieceSpawner.SpawnAll(levelData.pieces, levelData.grid.size, _currentConfig);
         }
 
         private void HandleBoardCompleted()
@@ -97,19 +119,5 @@ namespace Blokfit.Core
         {
             _commandHistory.Push(cmd);
         }
-
-        private static DifficultyConfig MakeConfig(
-            string name, int gridSize, int minPieces, int maxPieces,
-            int minPieceSize, int maxPieceSize) => new DifficultyConfig
-        {
-            difficultyName = name,
-            gridSize       = gridSize,
-            boardWorldSize = 7f,
-            minPieces      = minPieces,
-            maxPieces      = maxPieces,
-            minPieceSize   = minPieceSize,
-            maxPieceSize   = maxPieceSize,
-        };
     }
 }
-

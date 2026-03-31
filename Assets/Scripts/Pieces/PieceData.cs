@@ -24,22 +24,13 @@ namespace Blokfit.Pieces
 
     public class PieceData
     {
-        public int[]       Cells             { get; }
-        public TriOffset[] TriangleOffsets   { get; }
-        public int[]       AnchorCells       { get; }
-        public Color32     Color             { get; }
-        public int         GridSize          { get; }
-        public int         PrimaryAnchorFlat { get; }
+        public TriOffset[] TriangleOffsets { get; }
+        public Color32     Color           { get; }
 
-        public PieceData(int[] cells, TriOffset[] triangleOffsets, int[] anchorCells,
-                         Color32 color, int gridSize, int primaryAnchorFlat)
+        public PieceData(TriOffset[] triangleOffsets, Color32 color)
         {
-            Cells             = cells;
-            TriangleOffsets   = triangleOffsets;
-            AnchorCells       = anchorCells;
-            Color             = color;
-            GridSize          = gridSize;
-            PrimaryAnchorFlat = primaryAnchorFlat;
+            TriangleOffsets = triangleOffsets;
+            Color           = color;
         }
     }
 }

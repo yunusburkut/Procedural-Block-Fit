@@ -1,27 +1,21 @@
-﻿using UnityEngine;
-using UnityEngine.EventSystems;
+﻿using UnityEngine.EventSystems;
 using Blokfit.Pieces;
+using UnityEngine;
 
 namespace Blokfit.Input
 {
-
     public class InputHandler : MonoBehaviour
     {
         public DragState CurrentDrag { get; private set; }
-        public bool IsDragging  => CurrentDrag != null;
-        public bool IsBlocked   { get; set; }
+        public bool IsDragging => CurrentDrag != null;
+        public bool IsBlocked { get; set; }
 
-        public bool BeginDrag(PieceBehaviour piece, PointerEventData eventData, Vector2 pointerOffset)
+        public bool BeginDrag(PieceBehaviour piece, PointerEventData eventData)
         {
-            if (IsBlocked)   return false;
+            if (IsBlocked) return false;
             if (IsDragging) return false;
 
-            CurrentDrag = new DragState(
-                piece,
-                eventData.pointerId,
-                piece.transform.position,
-                pointerOffset
-            );
+            CurrentDrag = new DragState(piece, eventData.pointerId);
             return true;
         }
 
