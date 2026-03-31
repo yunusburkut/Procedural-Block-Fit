@@ -21,8 +21,12 @@ namespace Blokfit.Pieces
 
         public void SpawnAll(PieceJson[] pieceJsons, int gridSize, DifficultyConfig config)
         {
-            foreach (var json in pieceJsons)
-                _activePieces.Add(SpawnOne(json, gridSize, config));
+            for (int i = 0; i < pieceJsons.Length; i++)
+            {
+                var piece = SpawnOne(pieceJsons[i], gridSize, config);
+                _activePieces.Add(piece);
+                piece.AnimateIn(i);
+            }
         }
 
         public void DestroyAll()

@@ -1,7 +1,7 @@
 {
     "name": "Blokfit.Scripts",
     "rootNamespace": "Blokfit",
-    "references": [],
+    "references": ["DOTween.Modules"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

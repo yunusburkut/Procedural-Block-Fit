@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using DG.Tweening;
 using Blokfit.Board;
 using Blokfit.Input;
 using Blokfit.ScriptableObjects;
@@ -73,16 +74,29 @@ namespace Blokfit.Pieces
             BuildAnchorTransforms();
         }
 
+        public void AnimateIn(int index, float startY = 8f)
+        {
+            Vector3 target = transform.position;
+            transform.position = new Vector3(target.x, startY, target.z);
+
+            float delay = index * 0.12f;
+            transform.DOMove(target, 0.55f)
+                .SetDelay(delay)
+                .SetEase(Ease.OutBounce);
+        }
+
         public void SetPlaced(Vector2 snapWorldPos)
         {
-            transform.position = snapWorldPos;
             SetDragging(false);
+            transform.DOKill();
+            transform.DOMove(snapWorldPos, 0.15f).SetEase(Ease.OutQuad);
         }
 
         public void ReturnToTray(Vector2 originalPos)
         {
-            transform.position = originalPos;
             SetDragging(false);
+            transform.DOKill();
+            transform.DOMove(originalPos, 0.2f).SetEase(Ease.OutQuad);
         }
 
         // Visual rotation only – triangle offsets are not updated.
