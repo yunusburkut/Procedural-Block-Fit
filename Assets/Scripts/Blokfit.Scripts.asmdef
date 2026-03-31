@@ -1,7 +1,7 @@
 {
     "name": "Blokfit.Scripts",
     "rootNamespace": "Blokfit",
-    "references": ["DOTween.Modules"],
+    "references": ["DOTween.Modules", "Unity.TextMeshPro"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

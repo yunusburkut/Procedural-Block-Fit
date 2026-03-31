@@ -1,6 +1,8 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
+using TMPro;
 
 namespace Blokfit.UI
 {
@@ -11,7 +13,8 @@ namespace Blokfit.UI
         [SerializeField] private Button     _hardButton;
         [SerializeField] private GameObject _completionPanel;
         [SerializeField] private Button     _nextLevelButton;
-        [SerializeField] private Text        _moveCounterText;
+        [SerializeField] private TMP_Text   _doneText;
+        [SerializeField] private TMP_Text   _tapToContinueText;
 
         private System.Action _onNextLevel;
         private System.Action _onEasy;
@@ -36,20 +39,29 @@ namespace Blokfit.UI
             _onHard   = hard;
         }
 
-        public void UpdateMoveCounter(int count)
-        {
-            if (_moveCounterText != null)
-                _moveCounterText.text = $"Moves: {count}";
-        }
-
         public void ShowCompletion()
         {
-            if (_completionPanel != null) _completionPanel.SetActive(true);
+            if (_completionPanel == null) return;
+            _completionPanel.SetActive(true);
+
+            if (_doneText != null)
+            {
+                var c = _doneText.color; c.a = 0f; _doneText.color = c;
+                _doneText.DOFade(1f, 0.5f).SetEase(Ease.OutQuad);
+            }
+            if (_tapToContinueText != null)
+            {
+                var c = _tapToContinueText.color; c.a = 0f; _tapToContinueText.color = c;
+                _tapToContinueText.DOFade(1f, 0.5f).SetDelay(0.4f).SetEase(Ease.OutQuad);
+            }
         }
 
         public void HideCompletion()
         {
-            if (_completionPanel != null) _completionPanel.SetActive(false);
+            if (_completionPanel == null) return;
+            if (_doneText          != null) { _doneText.DOKill();          var c = _doneText.color;         c.a = 0f; _doneText.color         = c; }
+            if (_tapToContinueText != null) { _tapToContinueText.DOKill(); var c = _tapToContinueText.color; c.a = 0f; _tapToContinueText.color = c; }
+            _completionPanel.SetActive(false);
         }
     }
 }

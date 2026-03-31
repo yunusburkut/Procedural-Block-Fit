@@ -25,7 +25,6 @@ namespace Blokfit.Core
 
         private DifficultyConfig         _currentConfig;
         private readonly Stack<ICommand> _commandHistory = new();
-        private int                      _moveCount;
 
         private void Awake()
         {
@@ -64,8 +63,6 @@ namespace Blokfit.Core
             if (_commandHistory.Count == 0) return;
             var cmd = _commandHistory.Pop();
             cmd.Undo();
-            _moveCount = Mathf.Max(0, _moveCount - 1);
-            _uiOverlay.UpdateMoveCounter(_moveCount);
         }
 
         private void BeginLevel(DifficultyConfig config)
@@ -73,9 +70,7 @@ namespace Blokfit.Core
             _inputHandler.IsBlocked = false;
             _currentConfig = config;
             _commandHistory.Clear();
-            _moveCount = 0;
             _uiOverlay.HideCompletion();
-            _uiOverlay.UpdateMoveCounter(0);
 
             _pieceSpawner.DestroyAll();
             _boardController.ResetBoard();
@@ -101,8 +96,6 @@ namespace Blokfit.Core
         private void HandleMoveExecuted(ICommand cmd)
         {
             _commandHistory.Push(cmd);
-            _moveCount++;
-            _uiOverlay.UpdateMoveCounter(_moveCount);
         }
 
         private static DifficultyConfig MakeConfig(
