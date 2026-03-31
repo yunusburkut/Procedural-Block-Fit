@@ -50,6 +50,9 @@ namespace Blokfit.Generation
             while (regions.Count > config.maxPieces)
                 MergeSmallestIntoNearest(regions, n);
 
+            // Shuffle palette once per level so each piece gets a unique colour.
+            string[] palette = ShuffledPalette(rng);
+
             var pieces = new PieceJson[regions.Count];
             for (int i = 0; i < regions.Count; i++)
             {
@@ -60,7 +63,7 @@ namespace Blokfit.Generation
                 pieces[i] = new PieceJson
                 {
                     cells = cells,
-                    color = RandomColor(rng),
+                    color = palette[i % palette.Length],
                     anchors = new[] { anchor },
                     spawnX = spawnPos.x,
                     spawnY = spawnPos.y,
@@ -152,14 +155,36 @@ namespace Blokfit.Generation
             return center + new Vector2(ox, oy);
         }
 
+        // 16 colours spread ~22° apart on the hue wheel — each is a clearly distinct hue.
         private static readonly string[] PaletteHex =
         {
-            "#4A90D9", "#E94E77", "#50C878", "#F5A623",
-            "#9B59B6", "#1ABC9C", "#E74C3C", "#3498DB",
-            "#2ECC71", "#F39C12", "#8E44AD", "#16A085",
+            "#FF2222",   // red
+            "#FF6600",   // orange-red
+            "#FF9900",   // orange
+            "#FFD700",   // golden yellow
+            "#AADD00",   // yellow-green
+            "#33CC33",   // green
+            "#00BB77",   // spring green
+            "#00CCCC",   // cyan
+            "#0099DD",   // azure
+            "#0055FF",   // blue
+            "#5533FF",   // blue-violet
+            "#AA00FF",   // violet
+            "#DD00AA",   // magenta
+            "#FF0066",   // rose
+            "#FF66AA",   // light pink
+            "#AA5500",   // brown
         };
 
-        private string RandomColor(System.Random rng) =>
-            PaletteHex[rng.Next(PaletteHex.Length)];
+        private static string[] ShuffledPalette(System.Random rng)
+        {
+            var palette = (string[])PaletteHex.Clone();
+            for (int i = palette.Length - 1; i > 0; i--)
+            {
+                int j = rng.Next(i + 1);
+                (palette[i], palette[j]) = (palette[j], palette[i]);
+            }
+            return palette;
+        }
     }
 }
