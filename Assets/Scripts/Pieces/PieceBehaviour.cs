@@ -31,6 +31,7 @@ namespace Blokfit.Pieces
         private Vector2 _dragOffset;
         private float   _cellSize;
         private Camera  _camera;
+        private float   _cameraZ;   // cached once — camera is fixed in this game
 
         private static readonly int ColorProp = Shader.PropertyToID("_Color");
 
@@ -45,11 +46,17 @@ namespace Blokfit.Pieces
 
         private int _myOrder;
 
+        private Vector3 _screenToWorldBuffer;   // reused every drag frame — avoids per-frame heap alloc
+
+        private readonly List<(int col, int row)> _snapCandidateBuffer = new List<(int col, int row)>();
+        private static readonly int[] _snapThresholds = { 6, 4, 2, 0 };
+
         // Shared triangle sprites (created once, reused by every piece instance)
         private static Sprite _lowerTriSprite;   // type 0: BL-BR-TR
         private static Sprite _upperTriSprite;   // type 1: BL-TR-TL
 
         private List<SpriteRenderer> _triRenderers;
+        private List<SpriteRenderer> _snapDots;    // random vertex markers, visible only while dragging
 
         /// <summary>Wires up all dependencies and builds sprites, collider, and anchor transforms.</summary>
         public void Initialize(
@@ -67,11 +74,13 @@ namespace Blokfit.Pieces
 
             _collider = GetComponent<PolygonCollider2D>();
             _camera   = Camera.main;
-            _myOrder = PieceSortOrder.Next();
+            _cameraZ  = -_camera.transform.position.z;   // cache: camera never moves
+            _myOrder  = PieceSortOrder.Next();
 
             BuildTriangleSprites();
             BuildCollider();
             BuildAnchorTransforms();
+            BuildSnapDots();
         }
 
         /// <summary>Animates the piece dropping in from above with a staggered delay.</summary>
@@ -136,9 +145,21 @@ namespace Blokfit.Pieces
             transform.localScale = dragging ? Vector3.one * DragScale : Vector3.one;
 
             int order = _myOrder + (dragging ? DragSortBoost : 0);
-            if (_triRenderers == null) return;
-            foreach (var sr in _triRenderers)
-                sr.sortingOrder = order;
+
+            if (_triRenderers != null)
+                foreach (var sr in _triRenderers)
+                    sr.sortingOrder = order;
+
+            if (_snapDots != null)
+                foreach (var dot in _snapDots)
+                {
+                    // Always 1 above the piece triangles regardless of drag state.
+                    dot.sortingOrder = order + 1;
+
+                    dot.DOKill();
+                    dot.DOFade(dragging ? 0.9f : 0f, dragging ? 0.15f : 0.12f)
+                       .SetEase(dragging ? Ease.OutQuad : Ease.InQuad);
+                }
         }
 
         // ── Build ──────────────────────────────────────────────────────────
@@ -197,6 +218,134 @@ namespace Blokfit.Pieces
             AnchorTransforms = new List<Transform>(1) { transform };
         }
 
+        /// <summary>
+        /// Places snap-dot visuals at vertices that are "interior" to the piece shape:
+        /// only where 2 or more of the piece's own triangles meet.
+        /// Outer tips (touched by a single triangle) are excluded.
+        /// Falls back to all vertices if no interior ones exist (tiny pieces).
+        /// </summary>
+        private void BuildSnapDots()
+        {
+            // Fast lookup: which (dcol, drow, type) triangles belong to this piece.
+            var triSet = new HashSet<(int dc, int dr, int t)>();
+            foreach (var tri in Data.TriangleOffsets)
+                triSet.Add((tri.dcol, tri.drow, tri.type));
+
+            // Collect every unique vertex and its surrounding-triangle count.
+            var allVerts  = new HashSet<(int col, int row)>();
+            var vertCount = new Dictionary<(int col, int row), int>();
+
+            foreach (var tri in Data.TriangleOffsets)
+            {
+                (int col, int row)[] corners = tri.type == 0
+                    ? new[] { (tri.dcol, tri.drow), (tri.dcol + 1, tri.drow), (tri.dcol + 1, tri.drow + 1) }
+                    : new[] { (tri.dcol, tri.drow), (tri.dcol + 1, tri.drow + 1), (tri.dcol, tri.drow + 1) };
+
+                foreach (var v in corners)
+                {
+                    if (!allVerts.Add(v)) continue;
+                    vertCount[v] = CountSurrounding(triSet, v.col, v.row);
+                }
+            }
+
+            // Step-down: use the most deeply interior vertices available.
+            // count==6 → fully enclosed (all 6 surrounding tris belong to piece) — never on boundary
+            // count>=4 → mostly enclosed
+            // count>=2 → shared edge (piece outer boundary — allowed only if no better option)
+            // fallback  → any vertex (single-triangle pieces)
+            _snapCandidateBuffer.Clear();
+            List<(int col, int row)> candidates = null;
+            foreach (int threshold in _snapThresholds)
+            {
+                _snapCandidateBuffer.Clear();
+                foreach (var kv in vertCount)
+                    if (kv.Value >= threshold)
+                        _snapCandidateBuffer.Add(kv.Key);
+                if (_snapCandidateBuffer.Count > 0) { candidates = _snapCandidateBuffer; break; }
+            }
+
+            // Fisher-Yates shuffle for a random selection.
+            for (int i = candidates.Count - 1; i > 0; i--)
+            {
+                int j = UnityEngine.Random.Range(0, i + 1);
+                (candidates[i], candidates[j]) = (candidates[j], candidates[i]);
+            }
+
+            // Weighted roll: ~80 % → 1,  ~12 % → 2,  ~5 % → 3,  ~3 % → 4.
+            float roll = UnityEngine.Random.value;
+            int dotCount;
+            if      (roll < 0.80f) dotCount = 1;
+            else if (roll < 0.92f) dotCount = 2;
+            else if (roll < 0.97f) dotCount = 3;
+            else                   dotCount = 4;
+            dotCount = Mathf.Clamp(dotCount, 1, candidates.Count);
+
+            _snapDots = new List<SpriteRenderer>(dotCount);
+            var circle = CreateCircleSprite();
+
+            for (int i = 0; i < dotCount; i++)
+            {
+                (int col, int row) = candidates[i];
+
+                var go = new GameObject($"SnapDot_{col}_{row}");
+                go.transform.SetParent(transform, false);
+                go.transform.localPosition = new Vector3(col * _cellSize, row * _cellSize, 0f);
+                go.transform.localScale    = Vector3.one * (_cellSize * 0.32f);
+
+                var sr          = go.AddComponent<SpriteRenderer>();
+                sr.sprite       = circle;
+                sr.sortingOrder = _myOrder + DragSortBoost + 1;  // always above piece triangles
+                sr.color        = new Color(1f, 1f, 1f, 0f);     // start invisible
+
+                _snapDots.Add(sr);
+            }
+        }
+
+        /// <summary>
+        /// Counts how many of the 6 triangles surrounding vertex (vCol, vRow) belong to this piece.
+        /// Each vertex in a triangular half-cell grid can be shared by up to 6 triangles:
+        /// 3 lower-type (type=0) and 3 upper-type (type=1).
+        /// </summary>
+        private static int CountSurrounding(HashSet<(int dc, int dr, int t)> triSet, int vCol, int vRow)
+        {
+            int n = 0;
+            // Lower triangles (type 0): BL=(col,row) BR=(col+1,row) TR=(col+1,row+1)
+            if (triSet.Contains((vCol,     vRow,     0))) n++;  // BL of this lower tri
+            if (triSet.Contains((vCol - 1, vRow,     0))) n++;  // BR of lower tri to the left
+            if (triSet.Contains((vCol - 1, vRow - 1, 0))) n++;  // TR of lower tri below-left
+            // Upper triangles (type 1): BL=(col,row) TR=(col+1,row+1) TL=(col,row+1)
+            if (triSet.Contains((vCol,     vRow,     1))) n++;  // BL of this upper tri
+            if (triSet.Contains((vCol - 1, vRow - 1, 1))) n++;  // TR of upper tri below-left
+            if (triSet.Contains((vCol,     vRow - 1, 1))) n++;  // TL of upper tri below
+            return n;
+        }
+
+        /// <summary>Creates a soft white circle sprite (64×64 px, pivot at centre).</summary>
+        private static Sprite CreateCircleSprite()
+        {
+            const int size = 64;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode   = TextureWrapMode.Clamp,
+            };
+
+            float ctr    = (size - 1) * 0.5f;
+            float radius = ctr * 0.70f;
+            var   px     = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float dist  = Mathf.Sqrt((x - ctr) * (x - ctr) + (y - ctr) * (y - ctr));
+                float alpha = Mathf.Clamp01(radius - dist + 1f);  // +1 px soft edge
+                px[y * size + x] = new Color(1f, 1f, 1f, alpha);
+            }
+            tex.SetPixels(px);
+            tex.Apply();
+
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+        }
+
         // ── Sprite factory ────────────────────────────────────────────────
 
         /// <summary>
@@ -232,9 +381,12 @@ namespace Blokfit.Pieces
 
         private Vector2 ScreenToWorld(Vector2 screenPos)
         {
-            Vector3 wp = _camera.ScreenToWorldPoint(
-                new Vector3(screenPos.x, screenPos.y, -_camera.transform.position.z));
-            return wp;
+            // _cameraZ is cached at Initialize; avoids a Transform.position access every drag frame.
+            // _screenToWorldBuffer is reused to avoid per-frame heap allocation.
+            _screenToWorldBuffer.x = screenPos.x;
+            _screenToWorldBuffer.y = screenPos.y;
+            _screenToWorldBuffer.z = _cameraZ;
+            return _camera.ScreenToWorldPoint(_screenToWorldBuffer);
         }
 
 #if UNITY_EDITOR

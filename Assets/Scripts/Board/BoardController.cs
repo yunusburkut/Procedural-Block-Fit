@@ -43,6 +43,9 @@ namespace Blokfit.Board
         public int   GridSize => _gridSize;
         public float CellSize => _cellSize;
 
+        // Pre-computed board origin (world position of vertex [0,0]) — avoids per-call arithmetic.
+        private Vector2 _boardOrigin;
+
         /// <summary>Initialises snap points, occupancy arrays and board shader for a given grid size.</summary>
         public void Initialize(int gridSize)
         {
@@ -78,6 +81,11 @@ namespace Blokfit.Board
 
             SizeBoardQuad(size);
             UpdateBoardShader(gridSize);
+
+            // Cache origin once so GetNearestFreeSnapPoint does zero extra arithmetic.
+            _boardOrigin = new Vector2(
+                transform.position.x - _boardWorldSize * 0.5f,
+                transform.position.y - _boardWorldSize * 0.5f);
         }
 
         /// <summary>Clears all occupancy data; called between levels.</summary>
@@ -97,25 +105,16 @@ namespace Blokfit.Board
             _pieceOccupancy.Clear();
         }
 
-        /// <summary>Returns the snap point closest to <paramref name="worldPos"/>, regardless of occupancy.</summary>
+        /// <summary>
+        /// Returns the snap point whose grid vertex is nearest to <paramref name="worldPos"/>.
+        /// O(1): rounds the world position to the nearest integer grid coordinate.
+        /// </summary>
         public SnapPoint GetNearestFreeSnapPoint(Vector2 worldPos)
         {
-            SnapPoint best     = null;
-            float     bestDist = float.MaxValue;
-
-            for (int vRow = 0; vRow <= _gridSize; vRow++)
-            {
-                for (int vCol = 0; vCol <= _gridSize; vCol++)
-                {
-                    float d = Vector2.SqrMagnitude(worldPos - _snapPoints[vRow, vCol].WorldPosition);
-                    if (d < bestDist)
-                    {
-                        bestDist = d;
-                        best     = _snapPoints[vRow, vCol];
-                    }
-                }
-            }
-            return best;
+            // Convert world position to fractional grid coordinates, then round.
+            int vCol = Mathf.Clamp(Mathf.RoundToInt((worldPos.x - _boardOrigin.x) / _cellSize), 0, _gridSize);
+            int vRow = Mathf.Clamp(Mathf.RoundToInt((worldPos.y - _boardOrigin.y) / _cellSize), 0, _gridSize);
+            return _snapPoints[vRow, vCol];
         }
 
         /// <summary>

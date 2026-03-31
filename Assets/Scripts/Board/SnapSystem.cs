@@ -16,13 +16,15 @@ namespace Blokfit.Board
 
         // Snap triggers when the anchor is within half a cell of a snap point
         private float _snapThreshold;
+        private float _snapThresholdSq;   // pre-squared to avoid sqrt in hot path
 
         /// <summary>Raised after a successful snap; carries the reversible command.</summary>
         public event System.Action<ICommand> OnMoveExecuted;
 
         public void SetSnapThreshold(float cellSize)
         {
-            _snapThreshold = cellSize * 0.5f;
+            _snapThreshold   = cellSize * 0.5f;
+            _snapThresholdSq = _snapThreshold * _snapThreshold;
         }
 
         /// <summary>
@@ -39,8 +41,9 @@ namespace Blokfit.Board
             SnapPoint candidate = _board.GetNearestFreeSnapPoint(primaryAnchorWorldPos);
             if (candidate == null) return false;
 
-            float dist = Vector2.Distance(primaryAnchorWorldPos, candidate.WorldPosition);
-            if (dist >= _snapThreshold) return false;
+            // SqrMagnitude avoids a sqrt — compare squared distance against squared threshold.
+            float distSq = Vector2.SqrMagnitude(primaryAnchorWorldPos - candidate.WorldPosition);
+            if (distSq >= _snapThresholdSq) return false;
 
             Vector2 anchorLocalOffset = (Vector2)piece.AnchorTransforms[0].position - (Vector2)piece.transform.position;
             Vector2 targetPiecePos    = candidate.WorldPosition - anchorLocalOffset;
