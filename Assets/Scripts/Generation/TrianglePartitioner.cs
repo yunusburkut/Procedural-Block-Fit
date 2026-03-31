@@ -20,11 +20,11 @@ namespace Blokfit.Generation
     /// </summary>
     public class TrianglePartitioner
     {
-        private readonly bool[]        _assigned;
-        private readonly int           _n;
-        private readonly int           _total;
+        private readonly bool[]        _assigned;          // true once a triangle is claimed by a region
+        private readonly int           _n;                 // grid side length
+        private readonly int           _total;             // n * n * 2
         private readonly System.Random _rng;
-        private readonly List<int>     _neighborBuffer = new List<int>(3);
+        private readonly List<int>     _neighborBuffer = new List<int>(3);   // reused to avoid per-call allocs
 
         public TrianglePartitioner(int n, System.Random rng)
         {
@@ -34,6 +34,10 @@ namespace Blokfit.Generation
             _assigned = new bool[_total];
         }
 
+        /// <summary>
+        /// BFS from <paramref name="seedFlat"/> claiming up to <paramref name="targetSize"/> unassigned triangles.
+        /// Returns the actual array of claimed flat indices (may be smaller than targetSize near boundary).
+        /// </summary>
         public int[] CarveRegion(int seedFlat, int targetSize)
         {
             _assigned[seedFlat] = true;
@@ -59,6 +63,10 @@ namespace Blokfit.Generation
             return result.ToArray();
         }
 
+        /// <summary>
+        /// Finds the first unassigned triangle and returns its flat index via <paramref name="seedFlat"/>.
+        /// Returns false when the entire grid is partitioned.
+        /// </summary>
         public bool HasUnassigned(out int seedFlat)
         {
             for (int i = 0; i < _total; i++)

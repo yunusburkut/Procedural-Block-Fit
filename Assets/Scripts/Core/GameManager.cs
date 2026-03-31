@@ -33,15 +33,15 @@ namespace Blokfit.Core
         // e.g. https://example.com/levels/easy.json
         [SerializeField] private string _serverBaseUrl = "";
 
-        // ── El yapımı levellar ────────────────────────────────────────────────
-        [Header("El Yapımı Levellar")]
-        [Tooltip("Level Editor'dan export edilen JSON dosyaları.")]
+        // ── Handmade levels ───────────────────────────────────────────────────
+        [Header("Handmade Levels")]
+        [Tooltip("JSON files exported from the Level Editor.")]
         [SerializeField] private TextAsset[] _handmadeLevels;
 
-        [Tooltip("spawnX/Y = 0 olan piece'lerin dağıtılacağı merkez nokta.")]
+        [Tooltip("Center point around which pieces with spawnX/Y = 0 are scattered.")]
         [SerializeField] private Transform   _handmadeTrayCenter;
 
-        [Tooltip("Otomatik dağılım yarıçapı (unit).")]
+        [Tooltip("Scatter radius for automatic spawn distribution (units).")]
         [SerializeField] private float       _handmadeTraySpread = 1.2f;
 
         private int    _handmadeIndex;
@@ -82,17 +82,17 @@ namespace Blokfit.Core
                 BeginLevel(_currentConfig);
         }
 
-        // ── El yapımı level yükleme ───────────────────────────────────────────
+        // ── Handmade level loading ────────────────────────────────────────────
 
         /// <summary>
-        /// Inspector'daki <see cref="_handmadeLevels"/> listesinden sıradaki leveli yükler.
-        /// UIOverlay'deki "El Yapımı" butonu bunu çağırır.
+        /// Loads the next level from the <see cref="_handmadeLevels"/> list in the Inspector.
+        /// Called by the "Handmade" button in UIOverlay.
         /// </summary>
         public void LoadHandmadeLevel()
         {
             if (_handmadeLevels == null || _handmadeLevels.Length == 0)
             {
-                Debug.LogWarning("[GameManager] _handmadeLevels listesi boş!");
+                Debug.LogWarning("[GameManager] _handmadeLevels list is empty!");
                 return;
             }
 
@@ -112,8 +112,8 @@ namespace Blokfit.Core
         }
 
         /// <summary>
-        /// spawnX ve spawnY ikisi de 0 olan piece'lere otomatik tray konumu atar.
-        /// Level Editor'dan export edilen levellarda bu değerler her zaman 0'dır.
+        /// Assigns automatic tray positions to pieces whose spawnX and spawnY are both 0.
+        /// Levels exported from the Level Editor always have these values set to 0.
         /// </summary>
         private void ScatterSpawnPositions(LevelData data)
         {
@@ -135,7 +135,7 @@ namespace Blokfit.Core
                 var p = data.pieces[i];
                 if (p.spawnX != 0f || p.spawnY != 0f) continue;
 
-                // Piece'leri yay boyunca dağıt + küçük rastgele kaçınma
+                // Distribute pieces along an arc with a small random jitter
                 float angle  = (float)i / n * Mathf.PI * 2f;
                 float rx     = ((float)_handmadeRng.NextDouble() * 2f - 1f) * 0.3f;
                 float ry     = ((float)_handmadeRng.NextDouble() * 2f - 1f) * 0.3f;

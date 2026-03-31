@@ -5,6 +5,11 @@ using Blokfit.Pieces;
 
 namespace Blokfit.Board
 {
+    /// <summary>
+    /// Owns the board state: snap-point grid, triangle occupancy map, and completion detection.
+    /// Exposes <see cref="Place"/> / <see cref="Lift"/> for reversible piece placement,
+    /// and raises <see cref="OnBoardCompleted"/> when every triangle is filled.
+    /// </summary>
     public class BoardController : MonoBehaviour
     {
         [SerializeField] private MeshRenderer _boardRenderer;
@@ -12,6 +17,7 @@ namespace Blokfit.Board
 
         private Transform _snapPointRoot;
 
+        /// <summary>Fired once when all triangles on the board are occupied.</summary>
         public event Action OnBoardCompleted;
 
         // Snap points sit at every grid vertex: (gridSize+1)² points.
@@ -21,14 +27,14 @@ namespace Blokfit.Board
         private bool[,,]           _occupiedTriangles;
         private PieceBehaviour[,,] _occupants;
 
-        // Reverse lookup: piece → its occupied triangles (for O(1) Lift)
+        // Reverse lookup: piece → list of triangles it occupies (enables O(1) Lift)
         private readonly Dictionary<PieceBehaviour, List<(int r, int c, int t)>> _pieceOccupancy = new();
 
         private int   _gridSize;
         private float _cellSize;
         private float _boardWorldSize;
-        private int   _totalTriangles;
-        private int   _filledTriangles;
+        private int   _totalTriangles;    // gridSize² * 2
+        private int   _filledTriangles;   // incremented on Place, decremented on Lift
 
         private MaterialPropertyBlock _boardMpb;
         private static readonly int GridSizeProp  = Shader.PropertyToID("_GridSize");
@@ -37,6 +43,7 @@ namespace Blokfit.Board
         public int   GridSize => _gridSize;
         public float CellSize => _cellSize;
 
+        /// <summary>Initialises snap points, occupancy arrays and board shader for a given grid size.</summary>
         public void Initialize(int gridSize)
         {
             float size = Mathf.Min(_boardRect.width, _boardRect.height);
@@ -73,6 +80,7 @@ namespace Blokfit.Board
             UpdateBoardShader(gridSize);
         }
 
+        /// <summary>Clears all occupancy data; called between levels.</summary>
         public void ResetBoard()
         {
             if (_occupiedTriangles == null) return;
@@ -89,6 +97,7 @@ namespace Blokfit.Board
             _pieceOccupancy.Clear();
         }
 
+        /// <summary>Returns the snap point closest to <paramref name="worldPos"/>, regardless of occupancy.</summary>
         public SnapPoint GetNearestFreeSnapPoint(Vector2 worldPos)
         {
             SnapPoint best     = null;
@@ -109,6 +118,10 @@ namespace Blokfit.Board
             return best;
         }
 
+        /// <summary>
+        /// Tries to place <paramref name="piece"/> with its anchor at <paramref name="anchorVertex"/>.
+        /// Fails if any required triangle is out-of-bounds or already occupied.
+        /// </summary>
         public bool Place(PieceBehaviour piece, SnapPoint anchorVertex)
         {
             if (!GetTargetTriangles(piece, anchorVertex, out var targets)) return false;
@@ -125,6 +138,7 @@ namespace Blokfit.Board
             return true;
         }
 
+        /// <summary>Removes <paramref name="piece"/> from the board so it can be dragged again.</summary>
         public void Lift(PieceBehaviour piece)
         {
             if (!_pieceOccupancy.TryGetValue(piece, out var cells)) return;

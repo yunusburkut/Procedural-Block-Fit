@@ -1,16 +1,20 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Blokfit.Board;
 using Blokfit.Pieces;
 
 namespace Blokfit.Commands
 {
-
+    /// <summary>
+    /// Records a single piece placement so it can be undone.
+    /// Execute: commits the piece to the board at <c>snapPoint</c>.
+    /// Undo: lifts the piece off the board and returns it to its previous tray position.
+    /// </summary>
     public class PlacePieceCommand : ICommand
     {
         private readonly PieceBehaviour _piece;
         private readonly BoardController _board;
-        private readonly Vector2 _fromPosition;
-        private readonly Vector2 _toPosition;
+        private readonly Vector2 _fromPosition;   // world position before the snap
+        private readonly Vector2 _toPosition;     // world position after the snap
         private readonly SnapPoint _snapPoint;
 
         public PlacePieceCommand(

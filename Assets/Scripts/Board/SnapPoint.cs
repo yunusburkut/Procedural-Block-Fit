@@ -1,8 +1,12 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace Blokfit.Board
 {
 
+    /// <summary>
+    /// Marks an anchor vertex on the board grid where a piece can snap.
+    /// Interior snap points display a faint circle sprite; edge points are invisible.
+    /// </summary>
     public class SnapPoint : MonoBehaviour
     {
         public int Col { get; private set; }
@@ -13,9 +17,14 @@ namespace Blokfit.Board
         private Vector2        _worldPos;
         private SpriteRenderer _sr;
 
+        // Shared across all snap points to avoid redundant texture allocations
         private static Sprite _sharedSprite;
         private static readonly Color FreeColor = new Color(1f, 1f, 1f, 0.22f);
 
+        /// <summary>
+        /// Sets grid coordinates and world position. Edge points (col/row == 0 or N)
+        /// skip the visual so the board border stays clean.
+        /// </summary>
         public void Initialize(int col, int row, Vector2 worldPos, float cellSize, int gridSize)
         {
             Col       = col;

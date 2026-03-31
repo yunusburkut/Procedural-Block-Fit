@@ -7,6 +7,11 @@ using Blokfit.Input;
 
 namespace Blokfit.Pieces
 {
+    /// <summary>
+    /// MonoBehaviour that drives a single puzzle piece:
+    /// renders per-triangle sprites, manages the polygon collider, handles pointer events,
+    /// and delegates snap/board placement to <see cref="SnapSystem"/> and <see cref="BoardController"/>.
+    /// </summary>
     [RequireComponent(typeof(SpriteRenderer))]
     [RequireComponent(typeof(PolygonCollider2D))]
     public class PieceBehaviour : MonoBehaviour,
@@ -31,20 +36,22 @@ namespace Blokfit.Pieces
 
         private const int   DragSortBoost   = 1000;
         private const float DragScale       = 1.1f;
+        // Animation constants
         private const float AnimInDuration  = 0.55f;
-        private const float AnimInStagger   = 0.12f;
-        private const float AnimInStartY    = 8f;
+        private const float AnimInStagger   = 0.12f;   // delay per piece index
+        private const float AnimInStartY    = 8f;      // off-screen Y start
         private const float SnapDuration    = 0.15f;
         private const float ReturnDuration  = 0.2f;
 
         private int _myOrder;
 
-        // Shared triangle sprites (lower = type 0, upper = type 1)
-        private static Sprite _lowerTriSprite;
-        private static Sprite _upperTriSprite;
+        // Shared triangle sprites (created once, reused by every piece instance)
+        private static Sprite _lowerTriSprite;   // type 0: BL-BR-TR
+        private static Sprite _upperTriSprite;   // type 1: BL-TR-TL
 
         private List<SpriteRenderer> _triRenderers;
 
+        /// <summary>Wires up all dependencies and builds sprites, collider, and anchor transforms.</summary>
         public void Initialize(
             PieceData         data,
             float             cellSize,
@@ -67,6 +74,7 @@ namespace Blokfit.Pieces
             BuildAnchorTransforms();
         }
 
+        /// <summary>Animates the piece dropping in from above with a staggered delay.</summary>
         public void AnimateIn(int index, float startY = AnimInStartY)
         {
             Vector3 target = transform.position;
@@ -78,6 +86,7 @@ namespace Blokfit.Pieces
                 .SetEase(Ease.OutBounce);
         }
 
+        /// <summary>Tweens the piece to its snapped world position and marks it as placed.</summary>
         public void SetPlaced(Vector2 snapWorldPos)
         {
             SetDragging(false);
@@ -85,6 +94,7 @@ namespace Blokfit.Pieces
             transform.DOMove(snapWorldPos, SnapDuration).SetEase(Ease.OutQuad);
         }
 
+        /// <summary>Tweens the piece back to <paramref name="originalPos"/> when a snap fails.</summary>
         /// <param name="originalPos">Position captured at drag-start time (not necessarily the tray spawn position).</param>
         public void ReturnToTray(Vector2 originalPos)
         {

@@ -6,11 +6,19 @@ using Blokfit.ScriptableObjects;
 
 namespace Blokfit.Generation
 {
+    /// <summary>
+    /// Procedurally generates a complete <see cref="LevelData"/> from a <see cref="DifficultyConfig"/>.
+    /// Uses <see cref="TrianglePartitioner"/> to flood-fill the triangle grid into connected regions,
+    /// then enforces piece-count constraints by merging small regions into neighbours.
+    /// </summary>
     public class LevelGenerator : MonoBehaviour
     {
-        [SerializeField] private Transform _trayCenter;
-        [SerializeField] private float _traySpread = 1f;
+        [SerializeField] private Transform _trayCenter;    // pivot for spawn position scatter
+        [SerializeField] private float _traySpread = 1f;  // random offset radius
 
+        /// <summary>
+        /// Generates a full level layout. Pass <paramref name="seed"/> = 0 for a random seed.
+        /// </summary>
         public LevelData Generate(DifficultyConfig config, int seed = 0)
         {
             if (seed == 0) seed = Environment.TickCount;
@@ -135,6 +143,7 @@ namespace Blokfit.Generation
 
         private static readonly Vector2 DefaultTrayCenter = new Vector2(0f, -2.4f);
 
+        /// <summary>Returns a random position near the tray center as the piece's initial spawn.</summary>
         private Vector2 GetTraySpawnPosition(System.Random rng)
         {
             Vector2 center = _trayCenter != null ? (Vector2)_trayCenter.position : DefaultTrayCenter;

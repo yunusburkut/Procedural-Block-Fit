@@ -10,9 +10,9 @@ namespace Blokfit.Pieces
     /// </summary>
     public readonly struct TriOffset
     {
-        public readonly int dcol;
-        public readonly int drow;
-        public readonly int type;
+        public readonly int dcol;   // column delta from anchor
+        public readonly int drow;   // row delta from anchor
+        public readonly int type;   // 0 = lower, 1 = upper
 
         public TriOffset(int dcol, int drow, int type)
         {
@@ -22,6 +22,10 @@ namespace Blokfit.Pieces
         }
     }
 
+    /// <summary>
+    /// Immutable runtime description of a single puzzle piece:
+    /// the set of triangles it occupies (relative to its anchor) and its fill colour.
+    /// </summary>
     public class PieceData
     {
         public TriOffset[] TriangleOffsets { get; }

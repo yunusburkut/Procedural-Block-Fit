@@ -6,6 +6,10 @@ using Blokfit.Input;
 
 namespace Blokfit.Pieces
 {
+    /// <summary>
+    /// Instantiates and destroys <see cref="PieceBehaviour"/> GameObjects for the current level.
+    /// Each piece is positioned at its JSON spawn coordinates and animated into view.
+    /// </summary>
     public class PieceSpawner : MonoBehaviour
     {
         [SerializeField] private PieceBehaviour  _piecePrefab;
@@ -15,6 +19,7 @@ namespace Blokfit.Pieces
 
         private readonly List<PieceBehaviour> _activePieces = new();
 
+        /// <summary>Spawns all pieces for a level and triggers their drop-in animation.</summary>
         public void SpawnAll(PieceJson[] pieceJsons, int gridSize)
         {
             for (int i = 0; i < pieceJsons.Length; i++)

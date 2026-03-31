@@ -10,7 +10,7 @@ namespace Blokfit.UI
         [SerializeField] private Button     _easyButton;
         [SerializeField] private Button     _mediumButton;
         [SerializeField] private Button     _hardButton;
-        [SerializeField] private Button     _handmadeButton;     // El Yapımı Level butonu
+        [SerializeField] private Button     _handmadeButton;     // Handmade level button
         [SerializeField] private GameObject _completionPanel;
         [SerializeField] private Button     _nextLevelButton;
         [SerializeField] private TMP_Text   _doneText;

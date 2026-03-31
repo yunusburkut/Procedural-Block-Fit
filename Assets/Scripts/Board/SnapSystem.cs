@@ -1,16 +1,23 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Blokfit.Commands;
 using Blokfit.Pieces;
 
 namespace Blokfit.Board
 {
 
+    /// <summary>
+    /// Handles snap-to-grid logic when a piece is released.
+    /// Finds the nearest free snap point within the threshold distance, places the piece,
+    /// and raises <see cref="OnMoveExecuted"/> so the command can be pushed onto the undo stack.
+    /// </summary>
     public class SnapSystem : MonoBehaviour
     {
         [SerializeField] private BoardController _board;
 
+        // Snap triggers when the anchor is within half a cell of a snap point
         private float _snapThreshold;
 
+        /// <summary>Raised after a successful snap; carries the reversible command.</summary>
         public event System.Action<ICommand> OnMoveExecuted;
 
         public void SetSnapThreshold(float cellSize)
@@ -18,6 +25,10 @@ namespace Blokfit.Board
             _snapThreshold = cellSize * 0.5f;
         }
 
+        /// <summary>
+        /// Attempts to snap <paramref name="piece"/> to the nearest free grid vertex.
+        /// Returns true and fires <see cref="OnMoveExecuted"/> on success.
+        /// </summary>
         public bool TrySnap(PieceBehaviour piece)
         {
             if (piece.AnchorTransforms == null || piece.AnchorTransforms.Count == 0)

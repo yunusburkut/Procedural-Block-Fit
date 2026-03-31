@@ -25,46 +25,46 @@ namespace Blokfit.LevelEditor
     /// <summary>
     /// Tools ▶ Blokfit ▶ Level Editor
     ///
-    /// Sol panel : grid boyutu + piece listesi (renk seçici, isim, sil).
-    /// Sağ panel : N×N triangle grid; sol tık → seçili piece'e ata,
-    ///             sağ tık → atamayı kaldır.
-    /// Toolbar   : Temizle | ⬇ JSON Dışa Aktar
+    /// Left panel : grid size + piece list (colour picker, name, delete).
+    /// Right panel : N×N triangle grid; left-click → assign to selected piece,
+    ///               right-click → unassign.
+    /// Toolbar    : Clear | ⬇ Export JSON
     /// </summary>
     public class LevelEditorWindow : EditorWindow
     {
-        // ── Layout sabitleri ──────────────────────────────────────────────────
+        // ── Layout constants ──────────────────────────────────────────────────
         private const float LeftW      = 240f;
         private const float GridPad    = 24f;
         private const float RowH       = 44f;
 
-        // ── Renk paleti (yeni piece için otomatik) ────────────────────────────
+        // ── Colour palette (auto-assigned to new pieces) ──────────────────────
         private static readonly Color[] Palette =
         {
-            new(0.29f, 0.57f, 0.85f),   // mavi
-            new(0.91f, 0.31f, 0.47f),   // pembe
-            new(0.31f, 0.78f, 0.47f),   // yeşil
-            new(0.96f, 0.65f, 0.14f),   // turuncu
-            new(0.61f, 0.35f, 0.71f),   // mor
+            new(0.29f, 0.57f, 0.85f),   // blue
+            new(0.91f, 0.31f, 0.47f),   // pink
+            new(0.31f, 0.78f, 0.47f),   // green
+            new(0.96f, 0.65f, 0.14f),   // orange
+            new(0.61f, 0.35f, 0.71f),   // purple
             new(0.10f, 0.74f, 0.61f),   // teal
-            new(0.91f, 0.29f, 0.24f),   // kırmızı
-            new(0.20f, 0.60f, 0.86f),   // açık mavi
-            new(0.95f, 0.76f, 0.19f),   // sarı
-            new(0.20f, 0.80f, 0.60f),   // nane
+            new(0.91f, 0.29f, 0.24f),   // red
+            new(0.20f, 0.60f, 0.86f),   // light blue
+            new(0.95f, 0.76f, 0.19f),   // yellow
+            new(0.20f, 0.80f, 0.60f),   // mint
         };
 
-        // ── Durum (domain reload'da korunur) ──────────────────────────────────
+        // ── State (survives domain reload) ───────────────────────────────────
         [SerializeField] private int               _gridSize        = 4;
         [SerializeField] private int               _pendingGridSize = 4;
         [SerializeField] private List<EditorPiece> _pieces          = new();
         [SerializeField] private int               _selectedPiece   = -1;
 
-        // Her triangleın sahibi: -1 = boş, >=0 = piece index
-        // Düz indeks: (row * N + col) * 2 + type   (type 0=lower, 1=upper)
+        // Per-triangle owner: -1 = unassigned, >=0 = piece index
+        // Flat index: (row * N + col) * 2 + type   (type 0=lower, 1=upper)
         [SerializeField] private int[]             _owner;
 
         private Vector2  _listScroll;
 
-        // ── Menü ──────────────────────────────────────────────────────────────
+        // ── Menu ──────────────────────────────────────────────────────────────
         [MenuItem("Tools/Blokfit/Level Editor %&l")]
         public static void Open()
         {
@@ -93,14 +93,14 @@ namespace Blokfit.LevelEditor
             }
             else
             {
-                // Tüm atamaları temizle ama piece listesini koru
+                // Clear all assignments but keep the piece list
                 _selectedPiece = Mathf.Clamp(_selectedPiece, -1, _pieces.Count - 1);
             }
 
             Repaint();
         }
 
-        // ── Ana OnGUI ─────────────────────────────────────────────────────────
+        // ── Main OnGUI ────────────────────────────────────────────────────────
         private void OnGUI()
         {
             DrawTopBar();
@@ -120,53 +120,53 @@ namespace Blokfit.LevelEditor
             GUILayout.Label("  ▦  Blokfit Level Editor", EditorStyles.boldLabel, GUILayout.Width(210));
             GUILayout.FlexibleSpace();
 
-            // Özet istatistik
+            // Summary stats
             int total      = _owner?.Length ?? 0;
             int unassigned = 0;
             if (_owner != null) foreach (var o in _owner) if (o < 0) unassigned++;
-            GUILayout.Label($"Boş: {unassigned} / {total} tri", EditorStyles.miniLabel);
+            GUILayout.Label($"Unassigned: {unassigned} / {total} tri", EditorStyles.miniLabel);
             GUILayout.Space(12);
 
-            // Temizle
+            // Clear
             var oldCol = GUI.color;
             GUI.color = new Color(1f, 0.55f, 0.55f);
-            if (GUILayout.Button("Temizle", EditorStyles.toolbarButton, GUILayout.Width(70)))
+            if (GUILayout.Button("Clear", EditorStyles.toolbarButton, GUILayout.Width(70)))
             {
-                if (EditorUtility.DisplayDialog("Temizle", "Tüm piece ve atamalar silinsin mi?", "Evet", "İptal"))
+                if (EditorUtility.DisplayDialog("Clear", "Delete all pieces and assignments?", "Yes", "Cancel"))
                     InitGrid(keepPieces: false);
             }
             GUI.color = oldCol;
 
             // Export
             GUI.color = new Color(0.55f, 1f, 0.65f);
-            if (GUILayout.Button("⬇  JSON Dışa Aktar", EditorStyles.toolbarButton, GUILayout.Width(140)))
+            if (GUILayout.Button("⬇  Export JSON", EditorStyles.toolbarButton, GUILayout.Width(140)))
                 ExportJson();
             GUI.color = oldCol;
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        //  Sol Panel
+        //  Left Panel
         // ─────────────────────────────────────────────────────────────────────
         private void DrawLeftPanel()
         {
             using var v = new EditorGUILayout.VerticalScope(GUILayout.Width(LeftW), GUILayout.ExpandHeight(true));
 
-            // ── Grid Ayarları ────────────────────────────────────────────────
+            // ── Grid Settings ────────────────────────────────────────────────
             EditorGUILayout.Space(8);
-            EditorGUILayout.LabelField("⚙  Grid Ayarları", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("⚙  Grid Settings", EditorStyles.boldLabel);
 
-            _pendingGridSize = EditorGUILayout.IntSlider("Boyut (N)", _pendingGridSize, 2, 10);
+            _pendingGridSize = EditorGUILayout.IntSlider("Size (N)", _pendingGridSize, 2, 10);
 
             if (_pendingGridSize != _gridSize)
             {
                 var oldCol = GUI.color;
                 GUI.color = new Color(1f, 0.85f, 0.35f);
-                if (GUILayout.Button($"Uygula  ({_gridSize} → {_pendingGridSize})", GUILayout.Height(22)))
+                if (GUILayout.Button($"Apply  ({_gridSize} → {_pendingGridSize})", GUILayout.Height(22)))
                 {
-                    if (EditorUtility.DisplayDialog("Grid Boyutunu Değiştir",
-                            $"Grid {_gridSize}×{_gridSize} → {_pendingGridSize}×{_pendingGridSize} yapılacak.\n" +
-                            "Mevcut atamalar sıfırlanır, piece listesi korunur.",
-                            "Uygula", "İptal"))
+                    if (EditorUtility.DisplayDialog("Change Grid Size",
+                            $"Grid will be resized: {_gridSize}×{_gridSize} → {_pendingGridSize}×{_pendingGridSize}.\n" +
+                            "All assignments will be cleared; the piece list will be kept.",
+                            "Apply", "Cancel"))
                     {
                         _gridSize = _pendingGridSize;
                         InitGrid(keepPieces: true);
@@ -181,10 +181,10 @@ namespace Blokfit.LevelEditor
 
             DrawHR();
 
-            // ── Piece Listesi ────────────────────────────────────────────────
-            EditorGUILayout.LabelField("🎨  Piece'ler", EditorStyles.boldLabel);
+            // ── Piece List ───────────────────────────────────────────────────
+            EditorGUILayout.LabelField("🎨  Pieces", EditorStyles.boldLabel);
 
-            if (GUILayout.Button("＋  Yeni Piece", GUILayout.Height(26)))
+            if (GUILayout.Button("＋  New Piece", GUILayout.Height(26)))
             {
                 _pieces.Add(new EditorPiece
                 {
@@ -205,19 +205,19 @@ namespace Blokfit.LevelEditor
 
             DrawHR();
 
-            // ── Yardım metni ─────────────────────────────────────────────────
+            // ── Help text ────────────────────────────────────────────────────
             if (_selectedPiece >= 0 && _selectedPiece < _pieces.Count)
             {
                 int cnt = CountTris(_selectedPiece);
                 EditorGUILayout.HelpBox(
-                    $"Aktif  →  {_pieces[_selectedPiece].Name}  ({cnt} tri)\n" +
-                    "Sol tık: ata / sil    Sağ tık: atamayı kaldır",
+                    $"Active  →  {_pieces[_selectedPiece].Name}  ({cnt} tri)\n" +
+                    "Left-click: assign / remove    Right-click: unassign",
                     MessageType.Info);
             }
             else
             {
                 EditorGUILayout.HelpBox(
-                    "Bir piece seçin veya oluşturun,\nsonra grid'deki triangle'lara tıklayın.",
+                    "Select or create a piece,\nthen click triangles in the grid.",
                     MessageType.None);
             }
 
@@ -228,7 +228,7 @@ namespace Blokfit.LevelEditor
         {
             bool isSel = (i == _selectedPiece);
 
-            // Seçili piece için arka plan rengi
+            // Background colour for the selected piece row
             var oldBg = GUI.backgroundColor;
             GUI.backgroundColor = isSel
                 ? new Color(0.40f, 0.72f, 1.00f, 1f)
@@ -238,22 +238,22 @@ namespace Blokfit.LevelEditor
                 GUILayout.MinHeight(RowH));
             GUI.backgroundColor = oldBg;
 
-            // ── Satır içi kontroller ─────────────────────────────────────────
+            // ── Row controls ─────────────────────────────────────────────────
             using (var row = new EditorGUILayout.HorizontalScope())
             {
-                // Renk seçici
+                // Colour picker
                 _pieces[i].Color = EditorGUILayout.ColorField(
                     GUIContent.none, _pieces[i].Color,
                     showEyedropper: false, showAlpha: false, hdr: false,
                     GUILayout.Width(30), GUILayout.Height(20));
 
-                // İsim alanı
+                // Name field
                 _pieces[i].Name = EditorGUILayout.TextField(_pieces[i].Name);
 
-                // Seç / aktif göstergesi
+                // Select / active indicator
                 if (!isSel)
                 {
-                    if (GUILayout.Button("Seç", EditorStyles.miniButton, GUILayout.Width(38)))
+                    if (GUILayout.Button("Select", EditorStyles.miniButton, GUILayout.Width(46)))
                     {
                         _selectedPiece = i;
                         GUI.FocusControl(null);
@@ -268,23 +268,23 @@ namespace Blokfit.LevelEditor
                     GUI.color = oc;
                 }
 
-                // Sil butonu
+                // Delete button
                 var oc2 = GUI.color;
                 GUI.color = new Color(1f, 0.40f, 0.40f);
                 if (GUILayout.Button("✕", EditorStyles.miniButton, GUILayout.Width(20)))
                 {
                     GUI.color = oc2;
                     DeletePiece(i);
-                    return;     // liste değişti, döngüyü durdur
+                    return;     // list changed, stop the loop
                 }
                 GUI.color = oc2;
             }
 
-            // Triangle sayısı
+            // Triangle count
             int triCount = CountTris(i);
             EditorGUILayout.LabelField($"   {triCount} triangle", EditorStyles.miniLabel);
 
-            // Satırın tamamına tıklamak → seç
+            // Clicking anywhere on the row → select
             var lastRect = GUILayoutUtility.GetLastRect();
             if (Event.current.type == EventType.MouseDown &&
                 Event.current.button == 0 &&
@@ -308,13 +308,13 @@ namespace Blokfit.LevelEditor
                 GUILayout.ExpandWidth(true),
                 GUILayout.ExpandHeight(true));
 
-            // Arkaplan
+            // Background
             if (Event.current.type == EventType.Repaint)
                 EditorGUI.DrawRect(panel, new Color(0.11f, 0.11f, 0.13f));
 
             if (_owner == null) return;
 
-            // ── Grid yerleşimi ───────────────────────────────────────────────
+            // ── Grid layout ──────────────────────────────────────────────────
             float avW      = panel.width  - GridPad * 2f;
             float avH      = panel.height - GridPad * 2f;
             float cellSize = Mathf.Min(avW, avH) / _gridSize;
@@ -323,7 +323,7 @@ namespace Blokfit.LevelEditor
             float ox       = panel.x + (panel.width  - gridW) * 0.5f;
             float oy       = panel.y + (panel.height - gridH) * 0.5f;
 
-            // ── Mouse olayları ───────────────────────────────────────────────
+            // ── Mouse events ─────────────────────────────────────────────────
             Event e = Event.current;
             if (e.type == EventType.MouseDown && panel.Contains(e.mousePosition))
             {
@@ -332,7 +332,7 @@ namespace Blokfit.LevelEditor
                 Repaint();
             }
 
-            // ── Çizim (yalnızca Repaint) ─────────────────────────────────────
+            // ── Drawing (Repaint only) ───────────────────────────────────────
             if (e.type != EventType.Repaint) return;
 
             Handles.BeginGUI();
@@ -341,16 +341,16 @@ namespace Blokfit.LevelEditor
             {
                 for (int col = 0; col < _gridSize; col++)
                 {
-                    // Hücrenin ekran koordinatları
-                    // row 0 = grid'in altı → ekranda en alt satır
+                    // Screen coordinates for this cell
+                    // row 0 = bottom of the grid → lowest row on screen
                     float sx = ox + col                       * cellSize;
-                    float sy = oy + (_gridSize - 1 - row)    * cellSize;   // ekran Y yukarıdan büyür
+                    float sy = oy + (_gridSize - 1 - row)    * cellSize;   // screen Y grows downward
                     float ex = sx + cellSize;
                     float ey = sy + cellSize;
 
-                    // type 0 (lower): BL-BR-TR  →  ekranda sol-alt, sağ-alt, sağ-üst
+                    // type 0 (lower): BL-BR-TR  →  screen: bottom-left, bottom-right, top-right
                     var lv = new Vector3[] { new(sx, ey), new(ex, ey), new(ex, sy) };
-                    // type 1 (upper): BL-TR-TL  →  ekranda sol-alt, sağ-üst, sol-üst
+                    // type 1 (upper): BL-TR-TL  →  screen: bottom-left, top-right, top-left
                     var uv = new Vector3[] { new(sx, ey), new(ex, sy), new(sx, sy) };
 
                     int lFlat = (row * _gridSize + col) * 2;
@@ -361,7 +361,7 @@ namespace Blokfit.LevelEditor
                 }
             }
 
-            // Grid label (sol üst köşe bilgisi)
+            // Grid label (top-left corner info)
             GUI.color = new Color(1f, 1f, 1f, 0.35f);
             GUI.Label(new Rect(panel.x + 8, panel.y + 4, 120, 18),
                 $"Grid {_gridSize}×{_gridSize}  ({_gridSize * _gridSize * 2} tri)",
@@ -375,12 +375,12 @@ namespace Blokfit.LevelEditor
         {
             int own = _owner[flat];
 
-            // Dolgu rengi
+            // Fill colour
             Color fill;
             if (own >= 0 && own < _pieces.Count)
             {
                 fill = _pieces[own].Color;
-                // Seçili piece'i hafif aydınlat
+                // Brighten the active piece slightly
                 if (own == _selectedPiece)
                     fill = Color.Lerp(fill, Color.white, 0.18f);
             }
@@ -389,11 +389,11 @@ namespace Blokfit.LevelEditor
                 fill = new Color(0.20f, 0.20f, 0.23f);
             }
 
-            // Dolgu
+            // Fill
             Handles.color = fill;
             Handles.DrawAAConvexPolygon(v);
 
-            // Kenar çizgisi
+            // Outline
             Handles.color = new Color(0f, 0f, 0f, 0.55f);
             Handles.DrawAAPolyLine(1.4f, v[0], v[1], v[2], v[0]);
         }
@@ -428,15 +428,15 @@ namespace Blokfit.LevelEditor
         {
             if (mouseButton == 1)
             {
-                // Sağ tık → her zaman atamayı kaldır
+                // Right-click → always unassign
                 _owner[flat] = -1;
                 return;
             }
 
-            // Sol tık
+            // Left-click
             if (_selectedPiece < 0 || _selectedPiece >= _pieces.Count) return;
 
-            // Zaten bu piece'e atanmışsa → kaldır (toggle)
+            // Already assigned to this piece → remove (toggle)
             _owner[flat] = (_owner[flat] == _selectedPiece) ? -1 : _selectedPiece;
         }
 
@@ -447,23 +447,23 @@ namespace Blokfit.LevelEditor
         {
             if (_pieces.Count == 0)
             {
-                EditorUtility.DisplayDialog("Hata", "Önce en az bir piece ekleyin.", "Tamam");
+                EditorUtility.DisplayDialog("Error", "Add at least one piece first.", "OK");
                 return;
             }
 
-            // Boş triangle uyarısı
+            // Warn about unassigned triangles
             int unassigned = 0;
             if (_owner != null) foreach (var o in _owner) if (o < 0) unassigned++;
             if (unassigned > 0)
             {
-                bool proceed = EditorUtility.DisplayDialog("Uyarı",
-                    $"{unassigned} triangle herhangi bir piece'e atanmamış.\n" +
-                    "Yine de devam edilsin mi?",
-                    "Devam", "İptal");
+                bool proceed = EditorUtility.DisplayDialog("Warning",
+                    $"{unassigned} triangle(s) are not assigned to any piece.\n" +
+                    "Continue anyway?",
+                    "Continue", "Cancel");
                 if (!proceed) return;
             }
 
-            // PieceJson listesi oluştur
+            // Build PieceJson list
             var pieceJsons = new List<PieceJson>();
             for (int pi = 0; pi < _pieces.Count; pi++)
             {
@@ -471,9 +471,9 @@ namespace Blokfit.LevelEditor
                 for (int ti = 0; ti < _owner!.Length; ti++)
                     if (_owner[ti] == pi) cells.Add(ti);
 
-                if (cells.Count == 0) continue;   // boş piece → atla
+                if (cells.Count == 0) continue;   // empty piece → skip
 
-                // anchor = en küçük flat indeks
+                // anchor = smallest flat index
                 int anchor = cells[0];
                 foreach (int c in cells) if (c < anchor) anchor = c;
 
@@ -491,7 +491,7 @@ namespace Blokfit.LevelEditor
 
             if (pieceJsons.Count == 0)
             {
-                EditorUtility.DisplayDialog("Hata", "Hiçbir piece'e triangle atanmamış.", "Tamam");
+                EditorUtility.DisplayDialog("Error", "No triangles have been assigned to any piece.", "OK");
                 return;
             }
 
@@ -503,17 +503,17 @@ namespace Blokfit.LevelEditor
 
             string json = LevelSerializer.ToJson(levelData);
 
-            // Kayıt yerini seç
+            // Choose save location
             string defaultDir = Path.Combine(Application.dataPath, "Resources", "Levels");
             Directory.CreateDirectory(defaultDir);
 
             string path = EditorUtility.SaveFilePanel(
-                "Level JSON Kaydet", defaultDir, "level_handmade", "json");
+                "Save Level JSON", defaultDir, "level_handmade", "json");
             if (string.IsNullOrEmpty(path)) return;
 
             File.WriteAllText(path, json);
 
-            // Assets içindeyse refresh
+            // Refresh if inside Assets
             if (path.StartsWith(Application.dataPath))
             {
                 string rel = "Assets" + path[Application.dataPath.Length..];
@@ -521,12 +521,12 @@ namespace Blokfit.LevelEditor
             }
             AssetDatabase.Refresh();
 
-            Debug.Log($"[LevelEditor] Kaydedildi → {path}");
-            EditorUtility.DisplayDialog("✔  Kaydedildi", $"Dosya:\n{path}", "Tamam");
+            Debug.Log($"[LevelEditor] Saved → {path}");
+            EditorUtility.DisplayDialog("✔  Saved", $"File:\n{path}", "OK");
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        //  Yardımcılar
+        //  Helpers
         // ─────────────────────────────────────────────────────────────────────
 
         private void DeletePiece(int idx)
@@ -560,7 +560,7 @@ namespace Blokfit.LevelEditor
         }
 
         /// <summary>
-        /// İşaret metoduyla nokta-üçgen içi testi.
+        /// Point-in-triangle test using the sign method.
         /// </summary>
         private static bool PointInTri(Vector2 p, Vector3 a, Vector3 b, Vector3 c)
         {
