@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44888f407d0c1df46a3a247257ccdca0, type: 3}
   m_Name: HardConfig
   m_EditorClassIdentifier: Blokfit.Scripts::Blokfit.ScriptableObjects.DifficultyConfig
-  difficultyName: 
+  difficultyName: hard
   gridSize: 6
   minPieces: 8
   maxPieces: 12
