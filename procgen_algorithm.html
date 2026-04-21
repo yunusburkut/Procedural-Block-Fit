@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blokfit — Procedural Generation Algorithm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:        #1a1c23;
+      --ink-2:      #3a3d4a;
+      --accent:     #4361ee;
+      --accent-2:   #7209b7;
+      --faint:      #f4f5fb;
+      --rule:       #dde0ef;
+      --code-bg:    #1e2030;
+      --code-text:  #c0caf5;
+      --mono:       'JetBrains Mono', 'Fira Mono', monospace;
+      --sans:       'Inter', system-ui, sans-serif;
+      --radius:     10px;
+    }
+
+    html { font-size: 15px; color: var(--ink); background: #fff; }
+    body { font-family: var(--sans); line-height: 1.75; max-width: 860px; margin: 0 auto; padding: 48px 40px 80px; }
+
+    /* ── Typography ───────────────────────────────────────────────────── */
+    h1 { font-size: 2.3rem; font-weight: 700; letter-spacing: -0.5px; color: var(--ink); margin-bottom: 0.3rem; }
+    h2 { font-size: 1.35rem; font-weight: 700; color: var(--accent); margin: 2.8rem 0 0.9rem; border-bottom: 2px solid var(--rule); padding-bottom: 0.4rem; }
+    h3 { font-size: 1.05rem; font-weight: 600; color: var(--ink-2); margin: 1.8rem 0 0.5rem; }
+    h4 { font-size: 0.93rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin: 1.2rem 0 0.3rem; }
+    p  { margin-bottom: 0.85rem; }
+    ul, ol { padding-left: 1.5rem; margin-bottom: 0.85rem; }
+    li { margin-bottom: 0.2rem; }
+    strong { font-weight: 600; }
+    em     { color: var(--ink-2); }
+    a  { color: var(--accent); text-decoration: none; }
+
+    /* ── Cover block ─────────────────────────────────────────────────── */
+    .cover {
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 48px 56px;
+      margin-bottom: 3rem;
+    }
+    .cover .label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 0.6rem;
+    }
+    .cover h1 { color: #fff; font-size: 2rem; margin-bottom: 0.5rem; }
+    .cover .sub { color: rgba(255,255,255,0.65); font-size: 0.92rem; max-width: 550px; line-height: 1.6; }
+    .cover .meta { margin-top: 1.8rem; font-size: 0.78rem; color: rgba(255,255,255,0.4); }
+
+    /* ── Code blocks ─────────────────────────────────────────────────── */
+    pre {
+      background: var(--code-bg);
+      color: var(--code-text);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.3rem;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      line-height: 1.65;
+      overflow-x: auto;
+      margin: 0.9rem 0 1.2rem;
+    }
+    code {
+      font-family: var(--mono);
+      font-size: 0.82em;
+      background: var(--faint);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      color: #c026d3;
+    }
+    pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+    /* ── Callout boxes ───────────────────────────────────────────────── */
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--faint);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 0.9rem 1.2rem;
+      margin: 1rem 0 1.3rem;
+      font-size: 0.9rem;
+    }
+    .callout.note  { border-color: #0ea5e9; }
+    .callout.warn  { border-color: #f59e0b; background: #fffdf0; }
+    .callout.perf  { border-color: #22c55e; background: #f0fdf4; }
+    .callout > strong { display: block; margin-bottom: 0.2rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #888; }
+
+    /* ── Tables ──────────────────────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0 1.5rem; }
+    thead th { background: var(--faint); font-weight: 600; text-align: left; padding: 0.5rem 0.8rem; border-bottom: 2px solid var(--rule); }
+    tbody td { padding: 0.45rem 0.8rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── Step badges ─────────────────────────────────────────────────── */
+    .steps { counter-reset: step; }
+    .step  { display: flex; gap: 1.1rem; margin-bottom: 1.6rem; }
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      flex-shrink: 0;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-body { flex: 1; }
+    .step-body h3 { margin-top: 0.1rem; }
+
+    /* ── ASCII diagram ───────────────────────────────────────────────── */
+    .diagram {
+      background: var(--code-bg);
+      color: #a9b1d6;
+      border-radius: var(--radius);
+      padding: 1rem 1.4rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 1.55;
+      margin: 0.9rem 0 1.2rem;
+      white-space: pre;
+    }
+
+    /* ── Divider ─────────────────────────────────────────────────────── */
+    hr { border: none; border-top: 1px solid var(--rule); margin: 2.5rem 0; }
+
+    /* ── Inline highlight ────────────────────────────────────────────── */
+    .hl { color: var(--accent); font-weight: 600; }
+
+    /* ── Print / PDF tweaks ─────────────────────────────────────────── */
+    @media print {
+      body { padding: 24px 28px; }
+      .cover { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      pre, .diagram { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      h2 { break-before: auto; }
+      pre, .step, table { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════  COVER  ═══════════════════════ -->
+<div class="cover">
+  <div class="label">Technical Design Document</div>
+  <h1>Blokfit — Procedural Generation Algorithm</h1>
+  <p class="sub">
+    A full description of the seed-based, triangular-half-cell partition system that generates
+    puzzle levels at runtime: from grid representation through flood-fill carving,
+    constraint enforcement, and snap-point lookup.
+  </p>
+  <div class="meta">Blokfit · Unity 2D · C# · Namespace: <code style="color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.08)">Blokfit.Generation</code></div>
+</div>
+
+<!-- ═══════════════════════  1  ═══════════════════════ -->
+<h2>1 — System Overview</h2>
+<p>
+  Blokfit's levels are never hand-authored. Every time a level must be shown, a single
+  call to <code>LevelGenerator.Generate(DifficultyConfig, int seed)</code> runs the full pipeline
+  and returns a self-contained <code>LevelData</code> value object that can be immediately
+  serialised to JSON or fed to the scene loader.
+</p>
+<p>
+  The pipeline has four clearly separated responsibilities:
+</p>
+<ol>
+  <li><strong>Triangular grid representation</strong> — the board is modelled as <em>N×N×2</em> half-cell triangles, not squares.</li>
+  <li><strong>Randomised flood-fill partition</strong> — a BFS-based carver claims connected regions of triangles.</li>
+  <li><strong>Piece-count constraint enforcement</strong> — post-hoc merging reduces the number of regions to fit inside <code>[minPieces, maxPieces]</code>.</li>
+  <li><strong>Metadata assignment</strong> — each region receives an anchor vertex, a shuffled colour, and a tray spawn position.</li>
+</ol>
+<p>
+  The output is deterministic: the same <em>seed + DifficultyConfig</em> pair always produces an
+  identical level, enabling reproducible share-codes and server-side validation.
+</p>
+
+<!-- ═══════════════════════  2  ═══════════════════════ -->
+<h2>2 — Grid Representation: Triangular Half-Cell Encoding</h2>
+
+<h3>2.1 Why triangles instead of squares?</h3>
+<p>
+  A classic tangram aesthetic requires pieces that contain right-angle triangle half-cells.
+  Modelling the board in square cells and then splitting pieces post-hoc leads to awkward mesh
+  seams and complex adjacency logic. Instead, the board is defined as a grid of
+  <strong>2N² right-angle triangles</strong> right from the start — each square cell is
+  pre-divided by a diagonal running from its bottom-left to its top-right corner (the
+  <em>&sol;</em> diagonal).
+</p>
+
+<h3>2.2 Flat index encoding</h3>
+<p>Every triangle is identified by a single integer called its <em>flat index</em>:</p>
+
+<div class="diagram">
+  flat = (row × N + col) × 2 + type
+
+  type 0  →  lower triangle  (vertices: BL, BR, TR)   ◸  occupies lower-right half
+  type 1  →  upper triangle  (vertices: BL, TR, TL)   ◿  occupies upper-left  half
+</div>
+
+<p>
+  This encoding packs a <code>bool[]</code> of length <em>N²×2</em> as the only allocation
+  needed for the entire assignment state. Decoding back to <code>(col, row, type)</code> is
+  three cheap arithmetic operations — no hash map lookup required.
+</p>
+
+<h3>2.3 Adjacency rules</h3>
+<p>
+  In a triangular half-cell grid each triangle has <strong>exactly three neighbours</strong>
+  (one per edge). Lower-type triangles always neighbour upper-type triangles and vice versa:
+</p>
+
+<div class="diagram">
+  lower(col, row)  ↔  upper(col,   row  )   via the / diagonal (shared hypotenuse)
+  lower(col, row)  ↔  upper(col,   row-1)   via the bottom horizontal edge
+  lower(col, row)  ↔  upper(col+1, row  )   via the right  vertical   edge
+
+  upper(col, row)  ↔  lower(col,   row  )   via the / diagonal
+  upper(col, row)  ↔  lower(col,   row+1)   via the top    horizontal edge
+  upper(col, row)  ↔  lower(col-1, row  )   via the left   vertical   edge
+</div>
+
+<p>
+  These six cases are the entirety of the adjacency function in <code>TrianglePartitioner.GetFreeNeighbors</code>.
+  No general-purpose graph structure is needed; the rules reduce to simple
+  column/row ± 1 checks with boundary guards.
+</p>
+
+<!-- ═══════════════════════  3  ═══════════════════════ -->
+<h2>3 — The Partition Algorithm</h2>
+<p>
+  The partition is performed by <code>TrianglePartitioner</code>. Its approach is a
+  form of <strong>randomised BFS region-growing</strong>, akin to the well-known
+  <em>Random BFS maze-carver</em> but applied to create connected subgraphs instead of
+  spanning trees.
+</p>
+
+<h3>3.1 Main loop</h3>
+<div class="steps">
+
+  <div class="step">
+    <div class="step-body">
+      <h3>Find the next unassigned triangle</h3>
+      <p>
+        <code>HasUnassigned(out int seedFlat)</code> advances a monotone cursor
+        (<code>_nextSeedCursor</code>) through the flat-index array until it finds
+        a triangle whose <code>_assigned[i]</code> flag is <code>false</code>.
+        Because the cursor never resets within a generation run this is amortised <strong>O(N²)</strong>
+        total across all iterations, not O(N²) per call.
+      </p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-body">
+      <h3>Pick a random target region size</h3>
+      <p>
+        The target triangle count is drawn uniformly from
+        <code>[minPieceSize × 2, maxPieceSize × 2]</code>.
+        Square-based sizes from <code>DifficultyConfig</code> are doubled because each
+        square cell contributes two triangles.
+      </p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-body">
+      <h3>BFS flood-fill: CarveRegion</h3>
+      <p>
+        Starting from <code>seedFlat</code> the carver runs a BFS, claiming
+        neighbouring unassigned triangles until either the target size is reached
+        or no more free neighbours exist.
+      </p>
+      <p>
+        At each BFS step the list of free neighbours is
+        <strong>Fisher-Yates-shuffled</strong> with the seeded RNG before being enqueued.
+        This randomises the shape of each piece while still guaranteeing connectivity
+        (BFS ensures the region is always a connected subgraph of the triangle adjacency graph).
+      </p>
+      <pre><code>while (queue.Count > 0 &amp;&amp; result.Count &lt; targetSize)
+{
+    int current   = queue.Dequeue();
+    var neighbors = GetFreeNeighbors(current);   // ≤ 3 entries
+    Shuffle(neighbors);                           // Fisher-Yates
+
+    foreach (int nb in neighbors)
+    {
+        if (result.Count >= targetSize) break;
+        _assigned[nb] = true;
+        result.Add(nb);
+        queue.Enqueue(nb);
+    }
+}</code></pre>
+      <div class="callout perf">
+        <strong>Performance note</strong>
+        Both the result list (<code>_carveResult</code>) and the BFS queue (<code>_carveQueue</code>)
+        are pre-allocated fields that are <em>cleared</em> rather than re-created between calls.
+        This keeps the hot-path allocation to a single <code>ToArray()</code> call at the end of each region.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-body">
+      <h3>Immediate post-carve merge of under-size regions</h3>
+      <p>
+        If the freshly carved region is smaller than <code>minTriSize</code>
+        <em>and</em> enough pieces already exist (count &gt; <code>config.minPieces</code>),
+        the region is folded into its nearest neighbour immediately.
+        This prevents stray slivers from accumulating.
+      </p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-body">
+      <h3>Repeat until the grid is fully covered</h3>
+      <p>
+        Steps 1–4 iterate until <code>HasUnassigned</code> returns <code>false</code>,
+        guaranteeing every triangle belongs to exactly one region.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<h3>3.2 Algorithmic foundation</h3>
+<p>
+  The approach is directly inspired by the <strong>Randomised Prim's / BFS region-growing</strong>
+  family of algorithms used in procedural dungeon generation. The key difference from
+  a standard spanning-tree carver is that BFS expands <em>area</em> rather than
+  <em>paths</em>: each visited node enqueues all its free neighbours, not just one,
+  resulting in blob-shaped, roughly convex regions. The neighbour shuffle at each
+  dequeue step breaks the FIFO bias that would otherwise produce top-left biased
+  rectangles.
+</p>
+
+<!-- ═══════════════════════  4  ═══════════════════════ -->
+<h2>4 — Constraint Enforcement: Post-Hoc Merging</h2>
+<p>
+  Because flood-fill is greedy and unconstrained regarding global piece count, the
+  result may have more regions than <code>maxPieces</code> allows (this is common near
+  the grid boundary where late-stage seeds carve very small regions).
+</p>
+
+<h3>4.1 Centroid-based nearest-region lookup</h3>
+<p>
+  All merges are guided by <em>centroid distance</em>. The centroid of a region is
+  computed as the average <code>(col, row)</code> of its constituent triangles
+  (using the parent square-cell coordinates of each triangle index):
+</p>
+<pre><code>float sumX = 0, sumY = 0;
+foreach (int flat in triCells)
+{
+    int cellFlat = flat / 2;
+    sumX += cellFlat % N;   // col
+    sumY += cellFlat / N;   // row
+}
+centroid = new Vector2(sumX / triCells.Length, sumY / triCells.Length);</code></pre>
+<p>
+  Centroid values are cached in a <code>Dictionary&lt;int[], Vector2&gt;</code> keyed by
+  <em>array reference</em>. When a region is merged the two stale entries are removed and
+  the new merged array will be lazily computed on first access. This keeps repeated
+  merges during the post-hoc phase from becoming O(N⁴).
+</p>
+
+<h3>4.2 Merge-to-max-pieces loop</h3>
+<pre><code>while (regions.Count > config.maxPieces)
+    MergeSmallestIntoNearest(regions, N);</code></pre>
+<p>
+  Each iteration finds the region with the fewest triangles and merges it into its
+  centroid-nearest neighbour. Merging the smallest region first is a greedy heuristic
+  that tends to produce the most balanced final distribution — small satellite regions
+  are absorbed before larger ones, keeping average piece sizes roughly uniform.
+</p>
+
+<div class="callout warn">
+  <strong>Design trade-off</strong>
+  Nearest-centroid is not the same as nearest-touching-neighbour. In theory a merge could
+  produce a non-contiguous region if two non-adjacent regions happen to have close centroids.
+  In practice, on grids of size 4–8, region centroids correlate strongly with physical
+  adjacency, and the visual result is acceptable. A fully correct approach would require
+  maintaining an adjacency graph of regions, which was deemed unnecessary overhead.
+</div>
+
+<!-- ═══════════════════════  5  ═══════════════════════ -->
+<h2>5 — Metadata Assignment</h2>
+
+<h3>5.1 Anchor selection</h3>
+<p>
+  Each piece's <em>anchor</em> is the triangle with the smallest flat index in its region.
+  Because flat indices increase left-to-right, bottom-to-top, this selects
+  the bottom-left-most triangle, which keeps the anchor at a predictable and visually
+  grounded position. The anchor's bottom-left vertex (grid vertex <code>(col, row)</code>)
+  later becomes the piece's pivot in world space.
+</p>
+
+<h3>5.2 Colour palette</h3>
+<p>
+  A fixed palette of <strong>16 hues</strong>, spaced approximately 22° apart on the HSL
+  colour wheel, is shuffled once per level using Fisher-Yates with the same seeded RNG.
+  Pieces are assigned colours by palette index modulo 16. Because the shuffle is seeded,
+  colour distribution is fully deterministic given the seed.
+</p>
+
+<table>
+  <thead><tr><th>Palette slot</th><th>Colour name</th><th>Hex</th></tr></thead>
+  <tbody>
+    <tr><td>0</td><td>Red</td><td><code>#FF2222</code></td></tr>
+    <tr><td>1</td><td>Orange-red</td><td><code>#FF6600</code></td></tr>
+    <tr><td>2</td><td>Orange</td><td><code>#FF9900</code></td></tr>
+    <tr><td>3</td><td>Golden yellow</td><td><code>#FFD700</code></td></tr>
+    <tr><td>4</td><td>Yellow-green</td><td><code>#AADD00</code></td></tr>
+    <tr><td>5</td><td>Green</td><td><code>#33CC33</code></td></tr>
+    <tr><td>6</td><td>Spring green</td><td><code>#00BB77</code></td></tr>
+    <tr><td>7</td><td>Cyan</td><td><code>#00CCCC</code></td></tr>
+    <tr><td>8</td><td>Azure</td><td><code>#0099DD</code></td></tr>
+    <tr><td>9</td><td>Blue</td><td><code>#0055FF</code></td></tr>
+    <tr><td>10</td><td>Blue-violet</td><td><code>#5533FF</code></td></tr>
+    <tr><td>11</td><td>Violet</td><td><code>#AA00FF</code></td></tr>
+    <tr><td>12</td><td>Magenta</td><td><code>#DD00AA</code></td></tr>
+    <tr><td>13</td><td>Rose</td><td><code>#FF0066</code></td></tr>
+    <tr><td>14</td><td>Light pink</td><td><code>#FF66AA</code></td></tr>
+    <tr><td>15</td><td>Brown</td><td><code>#AA5500</code></td></tr>
+  </tbody>
+</table>
+
+<h3>5.3 Tray spawn position</h3>
+<p>
+  Each piece receives a random world-space position near the tray center, computed as:
+</p>
+<pre><code>offset = (rng.NextDouble() * 2 - 1) * traySpread   // uniform in [-spread, +spread]
+spawnPos = trayCenter + (offsetX, offsetY)</code></pre>
+<p>
+  This spreads pieces slightly so they don't all start stacked, but the spread is kept
+  small enough that all pieces remain visually inside the tray zone at puzzle start.
+</p>
+
+<!-- ═══════════════════════  6  ═══════════════════════ -->
+<h2>6 — Snap-to-Grid System</h2>
+<p>
+  The snap system must answer one question every time the player releases a piece:
+  <em>"to which board vertex — if any — should this piece snap?"</em>
+  It is designed with two hard requirements: <strong>O(1) lookup</strong> and
+  <strong>zero per-frame heap allocations</strong>.
+</p>
+
+<h3>6.1 Snap-point grid</h3>
+<p>
+  At level load, <code>BoardController.Initialize</code> creates a 2-D array of
+  <code>SnapPoint</code> objects, one per <em>grid vertex</em> (not per cell).
+  An N×N cell board has <strong>(N+1)²</strong> vertices:
+</p>
+<pre><code>_snapPoints = new SnapPoint[N+1, N+1];
+
+for (int vRow = 0; vRow &lt;= N; vRow++)
+    for (int vCol = 0; vCol &lt;= N; vCol++)
+        _snapPoints[vRow, vCol].Initialize(vCol, vRow, GridVertexToWorld(vCol, vRow), ...);</code></pre>
+<p>
+  The world position of each vertex is pre-computed once and stored directly in the
+  <code>SnapPoint</code> to avoid recomputing it during the per-frame drag loop.
+</p>
+
+<h3>6.2 O(1) nearest-vertex lookup</h3>
+<p>
+  Because the grid is regular (uniform cell size), finding the nearest vertex is
+  a closed-form operation — no search, no spatial data structure required:
+</p>
+<pre><code>public SnapPoint GetNearestFreeSnapPoint(Vector2 worldPos)
+{
+    int vCol = Clamp(RoundToInt((worldPos.x - _boardOrigin.x) / _cellSize), 0, N);
+    int vRow = Clamp(RoundToInt((worldPos.y - _boardOrigin.y) / _cellSize), 0, N);
+    return _snapPoints[vRow, vCol];
+}</code></pre>
+<p>
+  <code>_boardOrigin</code> (the world position of the bottom-left vertex) is cached at
+  <code>Initialize</code> time so this path is four arithmetic operations and one array
+  dereference — no branch beyond the clamps.
+</p>
+
+<h3>6.3 Threshold test and placement</h3>
+<p>
+  Once the nearest vertex is identified, the system checks whether the piece's
+  anchor is close enough to snap:
+</p>
+<pre><code>float distSq = SqrMagnitude(anchorWorldPos - candidate.WorldPosition);
+if (distSq >= _snapThresholdSq) return false;   // no snap</code></pre>
+<p>
+  <code>SqrMagnitude</code> is used deliberately to avoid the <code>sqrt</code> call that
+  <code>Vector2.Distance</code> would incur in a tight drag-frame path.
+  The threshold is set to <em>half a cell</em> so a piece snaps only when its anchor is
+  visually close to a vertex.
+</p>
+
+<h3>6.4 Occupancy validation</h3>
+<p>
+  Placement is valid only if every triangle the piece would occupy is both
+  in-bounds and currently unoccupied:
+</p>
+<pre><code>foreach (var tri in piece.Data.TriangleOffsets)
+{
+    int boardCol = anchorVertex.Col + tri.dcol;
+    int boardRow = anchorVertex.Row + tri.drow;
+    if (out-of-bounds)               return false;
+    if (_occupiedTriangles[r, c, t]) return false;
+    targets.Add((boardRow, boardCol, tri.type));
+}</code></pre>
+<p>
+  Occupancy is tracked in a <code>bool[N, N, 2]</code> 3-D array for O(1) reads/writes.
+  A parallel <code>Dictionary&lt;PieceBehaviour, List&lt;(r,c,t)&gt;&gt;</code> stores the
+  reverse mapping so that lifting a piece (undoing placement) is also O(number of triangles
+  in the piece) without scanning the entire occupancy array.
+</p>
+
+<!-- ═══════════════════════  7  ═══════════════════════ -->
+<h2>7 — Piece Rendering: Triangle Sprites</h2>
+<p>
+  Each piece is visually composed of individual triangle sprites — one child
+  <code>GameObject</code> per triangle in the region. This allows the tangram-style
+  diagonal cut aesthetic without polygon mesh generation at runtime.
+</p>
+
+<h3>7.1 Shared sprite atlas</h3>
+<p>
+  Only two <code>Sprite</code> objects exist for triangles across the entire runtime —
+  one for type 0 (lower, <em>◸</em>) and one for type 1 (upper, <em>◿</em>). They are
+  created once as static fields and re-used by every piece instance.
+  Each triangle child uses <code>MaterialPropertyBlock</code> to tint the sprite to its
+  piece colour, so all triangles share the same material with no GPU draw-call overhead.
+</p>
+
+<h3>7.2 Procedurally generated triangle textures</h3>
+<p>
+  The two triangle sprites are generated from code via CPU pixel writes into a 64×64
+  <code>Texture2D</code>. The mask function relies on a simple linear inequality:
+</p>
+<pre><code>// type 0 (lower): pixel is inside the triangle if x > y
+float edge  = (type == 0) ? (x - y) : (y - x);
+float alpha = Clamp01(edge + 1.0f);   // +1 px soft anti-alias fringe</code></pre>
+<p>
+  The <code>+1.0f</code> offset produces a one-pixel soft edge that eliminates aliasing
+  on the diagonal without a separate anti-aliasing pass.
+</p>
+
+<h3>7.3 Polygon collider</h3>
+<p>
+  <code>PieceBehaviour.BuildCollider</code> assigns one <em>path</em> per triangle to the
+  piece's <code>PolygonCollider2D</code>. Each path is a three-vertex array computed in
+  local space from the triangle's <code>(dcol, drow, type)</code> offset:
+</p>
+<pre><code>// type 0 (lower): BL, BR, TR
+path = { (x0, y0), (x1, y0), (x1, y1) };
+// type 1 (upper): BL, TR, TL
+path = { (x0, y0), (x1, y1), (x0, y1) };</code></pre>
+<p>
+  The multi-path <code>PolygonCollider2D</code> is Unity's recommended approach for
+  non-convex shapes — it handles input raycasting and physics correctly with no extra work.
+</p>
+
+<!-- ═══════════════════════  8  ═══════════════════════ -->
+<h2>8 — Snap-Dot Visual Hint System</h2>
+<p>
+  When the player begins dragging a piece, glowing dots appear on its surface.
+  These dots mark <em>interior vertices</em> — grid vertices shared by many of the
+  piece's own triangles — hinting to the player where the natural snap anchor points are.
+</p>
+
+<h3>8.1 Interior vertex scoring</h3>
+<p>
+  Each grid vertex can be surrounded by up to 6 triangles (3 lower-type + 3 upper-type).
+  A vertex's <em>interior score</em> is how many of those 6 surrounding triangles
+  belong to the current piece. The lookup is a hard-coded 6-case test against a
+  <code>HashSet</code> of the piece's <code>(dcol, drow, type)</code> tuples:
+</p>
+<pre><code>// lower-type triangles touching vertex (vCol, vRow):
+if (triSet.Contains((vCol,     vRow,     0))) n++;   // BL vertex of this lower tri
+if (triSet.Contains((vCol - 1, vRow,     0))) n++;   // BR vertex of left lower tri
+if (triSet.Contains((vCol - 1, vRow - 1, 0))) n++;   // TR vertex of lower-left lower tri
+// upper-type:
+if (triSet.Contains((vCol,     vRow,     1))) n++;
+if (triSet.Contains((vCol - 1, vRow - 1, 1))) n++;
+if (triSet.Contains((vCol,     vRow - 1, 1))) n++;</code></pre>
+
+<h3>8.2 Step-down threshold selection</h3>
+<p>
+  Candidate vertices are selected by descending through thresholds
+  <code>[6, 4, 2, 0]</code> and picking the highest threshold that yields at least one
+  candidate. This ensures that even single-triangle pieces (which have no interior
+  vertex with count ≥ 2) always get at least one dot.
+</p>
+
+<h3>8.3 Weighted dot count</h3>
+<p>
+  The number of dots per piece is drawn from a weighted distribution to keep the
+  visual from feeling mechanical:
+</p>
+<table>
+  <thead><tr><th>Probability</th><th>Number of dots</th></tr></thead>
+  <tbody>
+    <tr><td>80 %</td><td>1</td></tr>
+    <tr><td>12 %</td><td>2</td></tr>
+    <tr><td>5 %</td><td>3</td></tr>
+    <tr><td>3 %</td><td>4</td></tr>
+  </tbody>
+</table>
+<p>
+  Candidate vertices are Fisher-Yates-shuffled and then the first <em>dotCount</em>
+  are selected. Dots fade in/out smoothly using DOTween when the drag state changes.
+</p>
+
+<!-- ═══════════════════════  9  ═══════════════════════ -->
+<h2>9 — Data Flow Summary</h2>
+
+<div class="diagram">
+  DifficultyConfig ──┐
+  seed ──────────────┤
+                     ▼
+           LevelGenerator.Generate()
+                     │
+                     ├─ new System.Random(seed)
+                     ├─ new TrianglePartitioner(N, rng)
+                     │
+                     │   ┌─────────────────────────────────────┐
+                     │   │  while (HasUnassigned(seedFlat))    │
+                     │   │    targetSize = rng.Next(min, max)  │
+                     │   │    region = CarveRegion(seedFlat,   │
+                     │   │                         targetSize) │
+                     │   │    if region too small → merge      │
+                     │   └─────────────────────────────────────┘
+                     │
+                     │   while regions.Count > maxPieces
+                     │     MergeSmallestIntoNearest()
+                     │
+                     ├─ ShuffledPalette(rng)
+                     ├─ PickPrimaryAnchor()  per region
+                     ├─ GetTraySpawnPosition() per region
+                     │
+                     ▼
+               LevelData (JSON-serialisable)
+                     │
+                     ▼
+          GameManager → BoardController.Initialize(N)
+                      → PieceBehaviour.Initialize()  ×count
+                      → SnapSystem.SetSnapThreshold()
+</div>
+
+<!-- ═══════════════════════  10  ═══════════════════════ -->
+<h2>10 — Configuration Parameters</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Type</th>
+      <th>Meaning</th>
+      <th>Typical range</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>gridSize</code></td>
+      <td>int</td>
+      <td>Board side length in cells. Total triangles = 2 × gridSize².</td>
+      <td>4 – 8</td>
+    </tr>
+    <tr>
+      <td><code>minPieces</code></td>
+      <td>int</td>
+      <td>Minimum number of pieces in the final layout.</td>
+      <td>4 – 5</td>
+    </tr>
+    <tr>
+      <td><code>maxPieces</code></td>
+      <td>int</td>
+      <td>Maximum number of pieces; regions exceeding this are merged.</td>
+      <td>6 – 9</td>
+    </tr>
+    <tr>
+      <td><code>minPieceSize</code></td>
+      <td>int (squares)</td>
+      <td>Minimum BFS target, in squares. Internally doubled to triangles.</td>
+      <td>2 – 3</td>
+    </tr>
+    <tr>
+      <td><code>maxPieceSize</code></td>
+      <td>int (squares)</td>
+      <td>Maximum BFS target, in squares. Internally doubled to triangles.</td>
+      <td>4 – 6</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════  11  ═══════════════════════ -->
+<h2>11 — Complexity Analysis</h2>
+<table>
+  <thead>
+    <tr><th>Sub-system</th><th>Time</th><th>Space</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Full generation</td>
+      <td>O(N²)</td>
+      <td>O(N²)</td>
+      <td>Every triangle visited exactly once during carving.</td>
+    </tr>
+    <tr>
+      <td>Post-merge loop</td>
+      <td>O(P² × N²)</td>
+      <td>O(1) extra</td>
+      <td>P = number of pieces, usually ≤ 10. In practice negligible.</td>
+    </tr>
+    <tr>
+      <td>Snap-point lookup</td>
+      <td><strong>O(1)</strong></td>
+      <td>O(N²)</td>
+      <td>Direct array index via rounded world coordinates.</td>
+    </tr>
+    <tr>
+      <td>Placement validation</td>
+      <td>O(|piece|)</td>
+      <td>O(1)</td>
+      <td>|piece| = triangle count of the piece, ≤ 2 × maxPieceSize².</td>
+    </tr>
+    <tr>
+      <td>Lift (undo placement)</td>
+      <td>O(|piece|)</td>
+      <td>O(1)</td>
+      <td>Reverse lookup dictionary; no board scan required.</td>
+    </tr>
+    <tr>
+      <td>Snap-dot scoring</td>
+      <td>O(|piece| × 6)</td>
+      <td>O(|piece|)</td>
+      <td>Run once at piece build time, not per frame.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════  12  ═══════════════════════ -->
+<h2>12 — Algorithms & Prior Art</h2>
+<p>The implementation draws from several established techniques:</p>
+<ul>
+  <li>
+    <strong>Randomised BFS / Prim's region-growing</strong> — the canonical algorithm for
+    procedurally partitioning a grid into irregular connected regions, widely used in
+    roguelike dungeon generators. Our carver is a direct application on a triangular
+    adjacency graph rather than a square grid.
+  </li>
+  <li>
+    <strong>Fisher-Yates shuffle</strong> — used three times: neighbour-list shuffling inside
+    BFS (piece shape randomisation), colour-palette shuffling (visual diversity per level),
+    and snap-dot candidate shuffling (visual variety). The standard Knuth/Durstenfeld in-place
+    variant is used throughout.
+  </li>
+  <li>
+    <strong>Greedy smallest-first merge</strong> — a heuristic for balancing a partition
+    under a cardinality constraint, analogous to Huffman-coding's repeated minimal-pair
+    merges, but applied spatially rather than by frequency weight.
+  </li>
+  <li>
+    <strong>Lazy centroid cache with reference-equality keying</strong> — a common optimisation
+    for deferred computation of geometric aggregates in spatial data structures; identical in
+    spirit to the <em>memo-table</em> pattern in dynamic programming.
+  </li>
+  <li>
+    <strong>Squared-distance threshold test</strong> — avoiding <code>sqrt</code> in hot paths
+    is a standard micro-optimisation in game engine code (see any game-math reference, e.g.
+    <em>Game Programming Gems</em> Vol. 1, Section 1.1).
+  </li>
+</ul>
+
+<hr />
+<p style="font-size:0.8rem; color:#999; text-align:center;">
+  Blokfit Technical Design Document · Generated 2026 ·
+  All code in namespace <code>Blokfit.Generation</code>, <code>Blokfit.Board</code>, <code>Blokfit.Pieces</code>
+</p>
+
+</body>
+</html>

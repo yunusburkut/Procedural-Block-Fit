@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blokfit — Procedural Generation Algorithm</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.8;
+      color: #1a1a2e;
+      background: #f4f6fb;
+      padding: 40px 20px;
+    }
+
+    .page {
+      max-width: 880px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 28px rgba(0,0,0,0.10);
+      padding: 58px 68px;
+    }
+
+    h1 {
+      font-size: 2em;
+      color: #16213e;
+      border-bottom: 3px solid #0f3460;
+      padding-bottom: 12px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 0.93em;
+      margin-bottom: 38px;
+    }
+
+    h2 {
+      font-size: 1.22em;
+      color: #0f3460;
+      margin-top: 44px;
+      margin-bottom: 12px;
+      border-left: 4px solid #e94560;
+      padding-left: 10px;
+    }
+
+    h3 {
+      font-size: 1.03em;
+      color: #16213e;
+      margin-top: 24px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    p { margin-bottom: 13px; }
+
+    ul, ol { padding-left: 26px; margin-bottom: 14px; }
+    li { margin-bottom: 6px; }
+
+    code {
+      font-family: 'Cascadia Code', 'Fira Mono', Consolas, monospace;
+      font-size: 0.87em;
+      background: #eef1f8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #c0392b;
+    }
+
+    pre {
+      background: #1e2130;
+      color: #abb2bf;
+      border-radius: 8px;
+      padding: 20px 26px;
+      font-family: 'Cascadia Code', 'Fira Mono', Consolas, monospace;
+      font-size: 0.83em;
+      line-height: 1.65;
+      overflow-x: auto;
+      margin: 14px 0 22px;
+    }
+
+    .kw  { color: #c678dd; }
+    .ty  { color: #e5c07b; }
+    .cm  { color: #7f848e; font-style: italic; }
+    .st  { color: #98c379; }
+    .nm  { color: #d19a66; }
+    .op  { color: #56b6c2; }
+
+    .callout {
+      background: #eef6ff;
+      border-left: 4px solid #3498db;
+      border-radius: 0 6px 6px 0;
+      padding: 12px 18px;
+      margin: 18px 0;
+      font-size: 0.93em;
+    }
+
+    .callout.warn {
+      background: #fffbea;
+      border-color: #f39c12;
+    }
+
+    .callout.ok {
+      background: #edfaf1;
+      border-color: #27ae60;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 24px;
+      font-size: 0.91em;
+    }
+
+    th {
+      background: #0f3460;
+      color: #fff;
+      text-align: left;
+      padding: 9px 14px;
+      font-weight: 600;
+    }
+
+    td {
+      padding: 8px 14px;
+      border-bottom: 1px solid #e2e6f0;
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td { background: #f6f8fc; }
+
+    .diagram {
+      background: #1e2130;
+      color: #abb2bf;
+      font-family: 'Cascadia Code', Consolas, monospace;
+      font-size: 0.81em;
+      padding: 18px 26px;
+      border-radius: 8px;
+      margin: 14px 0 22px;
+      white-space: pre;
+      line-height: 1.55;
+    }
+
+    .swatch {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      vertical-align: middle;
+      margin-right: 5px;
+      border: 1px solid rgba(0,0,0,0.15);
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #e0e4ef;
+      margin: 40px 0;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #0f3460;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 0.74em;
+      padding: 1px 8px;
+      margin-left: 6px;
+      vertical-align: middle;
+      font-weight: 600;
+    }
+
+    .badge.green { background: #27ae60; }
+    .badge.red   { background: #e94560; }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .page { box-shadow: none; border-radius: 0; padding: 30px 38px; max-width: 100%; }
+      pre, .diagram { page-break-inside: avoid; }
+      h2 { page-break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Blokfit — Procedural Level Generation</h1>
+  <p class="subtitle">Algorithm design reference &nbsp;·&nbsp; <em>Blokfit Unity Puzzle Project</em> &nbsp;·&nbsp; 2026-03-31</p>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <h2>1. Overview</h2>
+
+  <p>
+    Blokfit is a 2D puzzle game in which the player drags irregularly shaped pieces onto a
+    triangulated board. Every level is <strong>procedurally generated</strong> at runtime from
+    a <code>DifficultyConfig</code> ScriptableObject, producing a complete <code>LevelData</code>
+    object that partitions an <em>N × N triangle grid</em> into non-overlapping, connected regions —
+    one region per puzzle piece.
+  </p>
+
+  <p>The pipeline runs in three sequential phases:</p>
+  <ol>
+    <li><strong>Grid encoding</strong> — map every triangle to a unique integer (flat index).</li>
+    <li><strong>Flood-fill partitioning</strong> — greedily claim triangles into connected regions via randomised BFS.</li>
+    <li><strong>Constraint enforcement</strong> — merge regions until piece-count and piece-size constraints are satisfied.</li>
+  </ol>
+
+  <p>Two C# classes implement the pipeline:</p>
+  <ul>
+    <li><code>TrianglePartitioner</code> — handles phases 1 and 2.</li>
+    <li><code>LevelGenerator : MonoBehaviour</code> — orchestrates phase 3 and assembles the final <code>LevelData</code>.</li>
+  </ul>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <h2>2. Difficulty Tiers</h2>
+
+  <p>
+    Three <code>DifficultyConfig</code> ScriptableObject assets drive the generator.
+    Each config defines grid size, piece-count bounds, and piece-size bounds (in squares;
+    multiplied by 2 internally to get triangle counts).
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Difficulty</th>
+        <th>Grid (N×N)</th>
+        <th>Triangles (N²×2)</th>
+        <th>minPieces</th>
+        <th>maxPieces</th>
+        <th>minPieceSize (sq)</th>
+        <th>maxPieceSize (sq)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Easy</strong></td>
+        <td>4 × 4</td>
+        <td>32</td>
+        <td>5</td>
+        <td>8</td>
+        <td>2</td>
+        <td>3</td>
+      </tr>
+      <tr>
+        <td><strong>Medium</strong></td>
+        <td>5 × 5</td>
+        <td>50</td>
+        <td>6</td>
+        <td>10</td>
+        <td>2</td>
+        <td>4</td>
+      </tr>
+      <tr>
+        <td><strong>Hard</strong></td>
+        <td>6 × 6</td>
+        <td>72</td>
+        <td>8</td>
+        <td>12</td>
+        <td>3</td>
+        <td>5</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout ok">
+    All values comply with the project spec: piece count in [5, 12] and grid size in [4, 6].
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <h2>3. Level Output Format (JSON)</h2>
+
+  <p>
+    The generated level is serialised as <strong>JSON</strong> via Unity's <code>JsonUtility</code>
+    (<code>LevelSerializer.ToJson / FromJson</code>). Levels can be downloaded from a remote server
+    using <code>UnityWebRequest</code>; if the download fails the game falls back to procedural
+    generation transparently.
+  </p>
+
+  <p>Example — <code>easy.json</code> (actual file from the project):</p>
+
+<pre>{
+  <span class="st">"version"</span>: <span class="nm">1</span>,
+  <span class="st">"difficulty"</span>: <span class="st">"easy"</span>,
+  <span class="st">"grid"</span>: { <span class="st">"size"</span>: <span class="nm">4</span> },
+  <span class="st">"pieces"</span>: [
+    {
+      <span class="st">"id"</span>: <span class="nm">0</span>,
+      <span class="st">"cells"</span>: [<span class="nm">0, 1, 2, 3, 8, 9, 10, 11</span>],   <span class="cm">// triangle flat indices</span>
+      <span class="st">"color"</span>: <span class="st">"#4A90D9"</span>,                  <span class="cm">// HTML hex colour</span>
+      <span class="st">"anchors"</span>: [<span class="nm">0</span>],                        <span class="cm">// primary anchor (min flat index)</span>
+      <span class="st">"spawnX"</span>: <span class="nm">-5.0</span>,                       <span class="cm">// world-space tray position</span>
+      <span class="st">"spawnY"</span>: <span class="nm">2.0</span>,
+      <span class="st">"solutionRotation"</span>: <span class="nm">0</span>
+    },
+    <span class="cm">// … more pieces</span>
+  ]
+}</pre>
+
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>version</code></td><td>int</td><td>Schema version — enables forward compatibility.</td></tr>
+      <tr><td><code>difficulty</code></td><td>string</td><td><code>"easy"</code> / <code>"medium"</code> / <code>"hard"</code> — used as server URL key.</td></tr>
+      <tr><td><code>grid.size</code></td><td>int</td><td>Board side length N. Board has N² cells and 2N² triangles.</td></tr>
+      <tr><td><code>cells</code></td><td>int[]</td><td>Flat triangle indices that make up the piece.</td></tr>
+      <tr><td><code>color</code></td><td>string</td><td>HTML hex colour string, e.g. <code>"#FF6600"</code>.</td></tr>
+      <tr><td><code>anchors</code></td><td>int[]</td><td>Single-element array: the minimum flat index in <code>cells</code>.</td></tr>
+      <tr><td><code>spawnX / spawnY</code></td><td>float</td><td>World-space position in the tray where the piece is initially placed.</td></tr>
+      <tr><td><code>solutionRotation</code></td><td>int</td><td>Reserved for future rotation mechanic (currently always 0).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Server download path</h3>
+  <p>
+    <code>GameManager</code> constructs the URL as:
+  </p>
+<pre><span class="st">"{_serverBaseUrl}/{config.difficultyName}.json"</span>
+<span class="cm">// e.g. https://example.com/levels/hard.json</span></pre>
+  <p>
+    If <code>_serverBaseUrl</code> is empty the generator runs locally. On HTTP error it falls
+    back to procedural generation and logs a warning.
+  </p>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <h2>4. Phase 1 — Triangle Grid Encoding</h2>
+
+  <h3>Flat-index formula</h3>
+  <p>
+    Each square cell at position <em>(col, row)</em> is split by a <strong>/</strong> diagonal
+    into two triangles. Every triangle gets a unique integer called its <strong>flat index</strong>:
+  </p>
+
+<pre>flat = (row × N + col) × 2 + type
+
+  type 0 → lower triangle  (vertices: BL, BR, TR)
+  type 1 → upper triangle  (vertices: BL, TR, TL)
+
+Inverse:
+  col  = (flat / 2) % N
+  row  = (flat / 2) / N
+  type =  flat % 2</pre>
+
+  <p>
+    An N=4 grid has 32 triangles (indices 0–31); N=6 has 72 (indices 0–71).
+  </p>
+
+  <div class="diagram">N = 4  →  32 triangles (flat indices shown)
+
+  col    0        1        2        3
+      ┌────────┬────────┬────────┬────────┐
+  row ╱ 1 │  ╱ 5 │  ╱ 9 │  ╱ 13│
+  3  ╱  0 │ ╱  4 │ ╱  8 │ ╱  12│
+     ├────────┼────────┼────────┼────────┤
+    ╱ 3 │  ╱ 7 │  ╱ 11│  ╱ 15│
+   ╱  2 │ ╱  6 │ ╱  10│ ╱  14│
+    ├────────┼────────┼────────┼────────┤
+   ╱ 17│  ╱ 21│  ╱ 25│  ╱ 29│
+  ╱  16│ ╱  20│ ╱  24│ ╱  28│
+   ├────────┼────────┼────────┼────────┤
+  ╱ 19│  ╱ 23│  ╱ 27│  ╱ 31│
+ ╱  18│ ╱  22│ ╱  26│ ╱  30│
+ └────────┴────────┴────────┴────────┘
+
+  lower(col, row) = (row*4 + col)*2      (even indices)
+  upper(col, row) = (row*4 + col)*2 + 1  (odd indices)</div>
+
+  <h3>Adjacency rules</h3>
+  <p>Each triangle has at most <strong>3 neighbours</strong> — one across the diagonal, two across edges. Boundary triangles have fewer.</p>
+
+  <table>
+    <thead><tr><th>Triangle</th><th>Neighbour 1</th><th>Neighbour 2</th><th>Neighbour 3</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>lower(col, row)</td>
+        <td>upper(col, row) — / diagonal</td>
+        <td>upper(col, row−1) — bottom edge</td>
+        <td>upper(col+1, row) — right edge</td>
+      </tr>
+      <tr>
+        <td>upper(col, row)</td>
+        <td>lower(col, row) — / diagonal</td>
+        <td>lower(col, row+1) — top edge</td>
+        <td>lower(col−1, row) — left edge</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <h2>5. Phase 2 — Randomised BFS Flood-Fill</h2>
+
+  <p>
+    <code>TrianglePartitioner.CarveRegion(seedFlat, targetSize)</code> grows one connected region
+    from a seed triangle using <strong>Breadth-First Search</strong>. The key twist is that the
+    (at most 3) free neighbours of each dequeued node are <strong>shuffled</strong> before being
+    enqueued, producing organically shaped, non-stripe-like pieces.
+  </p>
+
+  <h3>Algorithm pseudocode</h3>
+
+<pre><span class="cm">// Pre-allocated fields — zero heap allocations per call:</span>
+_carveResult : List&lt;int&gt;    <span class="cm">// accumulated region members</span>
+_carveQueue  : Queue&lt;int&gt;   <span class="cm">// BFS frontier</span>
+_neighborBuffer : List&lt;int&gt; <span class="cm">// max 3 candidates, reused</span>
+
+<span class="kw">procedure</span> CarveRegion(seedFlat, targetSize):
+    Mark seedFlat as assigned
+    result ← [seedFlat];  queue ← [seedFlat]
+
+    <span class="kw">while</span> queue not empty <span class="op">and</span> |result| &lt; targetSize:
+        current   ← queue.Dequeue()
+        neighbors ← GetFreeNeighbors(current)   <span class="cm">// ≤ 3 unassigned</span>
+        Shuffle(neighbors)                        <span class="cm">// Fisher-Yates in-place</span>
+
+        <span class="kw">for each</span> neighbor <span class="kw">in</span> neighbors:
+            <span class="kw">if</span> |result| ≥ targetSize: <span class="kw">break</span>
+            Mark neighbor as assigned
+            result.Add(neighbor)
+            queue.Enqueue(neighbor)
+
+    <span class="kw">return</span> result.ToArray()</pre>
+
+  <div class="callout">
+    <strong>Why shuffle neighbours?</strong> Without shuffling, BFS always expands in the same
+    direction, producing elongated stripe pieces. Shuffling the 1–3 candidates before enqueue
+    makes the expansion direction random at every step → compact, irregular, organic shapes.
+  </div>
+
+  <h3>Seed scan — cursor-based O(T) search</h3>
+  <p>
+    <code>HasUnassigned(out int seedFlat)</code> finds the next unclaimed triangle using a
+    forward-only integer cursor <code>_nextSeedCursor</code>. Because triangles are claimed in
+    BFS order (not flat-index order), the cursor never needs to backtrack:
+  </p>
+
+<pre><span class="cm">// O(T) total across all calls — cursor only moves forward</span>
+<span class="kw">while</span> _nextSeedCursor &lt; _total:
+    <span class="kw">if</span> !_assigned[_nextSeedCursor]:
+        seedFlat ← _nextSeedCursor
+        <span class="kw">return</span> <span class="nm">true</span>
+    _nextSeedCursor++
+<span class="kw">return</span> <span class="nm">false</span>    <span class="cm">// all triangles assigned</span></pre>
+
+  <p>
+    The naïve alternative — restarting from index 0 every call — would cost O(T²/avg) total.
+    The cursor reduces this to O(T) amortised.
+  </p>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <h2>6. Phase 3 — Constraint Enforcement</h2>
+
+  <p>
+    After all triangles are claimed the region list may violate two constraints.
+    <code>LevelGenerator</code> corrects both by merging regions.
+  </p>
+
+  <h3>6a. Inline small-region merge (during partitioning)</h3>
+  <p>
+    A freshly carved region that is smaller than <code>minPieceSize × 2</code> triangles
+    and the total count already exceeds <code>minPieces</code> is immediately merged into
+    its geometrically nearest neighbour:
+  </p>
+
+<pre><span class="kw">if</span> region.Length &lt; minTriSize <span class="op">and</span> regions.Count &gt; config.minPieces:
+    nearest ← FindNearestRegion(region, regions, n)
+    <span class="kw">if</span> nearest ≠ null:
+        MergeRegions(regions, region, nearest)</pre>
+
+  <h3>6b. Post-pass: reduce to maxPieces</h3>
+  <p>
+    After all triangles are assigned, if the count still exceeds <code>maxPieces</code>,
+    the smallest region is repeatedly merged into its nearest neighbour until the count is within bounds:
+  </p>
+
+<pre><span class="kw">while</span> regions.Count &gt; config.maxPieces:
+    MergeSmallestIntoNearest(regions, n)</pre>
+
+  <h3>Nearest-neighbour by centroid distance</h3>
+  <p>
+    "Nearest" means the region whose grid-space centroid is closest (squared Euclidean distance —
+    no <code>sqrt</code> needed for comparison). Centroids are computed lazily and cached in a
+    <code>Dictionary&lt;int[], Vector2&gt;</code> keyed by array <em>reference</em>
+    (not value equality). When two regions merge, both old keys are evicted; the new merged array
+    will recompute its centroid on first access.
+  </p>
+
+<pre><span class="cm">// Centroid of a region (grid-space coordinates):</span>
+centroid.x = mean of (flat / 2) % N    <span class="cm">// column</span>
+centroid.y = mean of (flat / 2) / N    <span class="cm">// row</span>
+
+<span class="cm">// Nearest-region search — O(R) per call:</span>
+<span class="kw">for each</span> other <span class="kw">in</span> regions (skip self):
+    d = SqrMagnitude(centroid(region) − centroid(other))
+    <span class="kw">if</span> d &lt; bestDist: best ← other
+
+<span class="cm">// Cache invalidation on merge:</span>
+_centroidCache.Remove(from)
+_centroidCache.Remove(into)
+<span class="cm">// merged array reference is new → recomputed lazily on next access</span></pre>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <h2>7. Piece Assembly</h2>
+
+  <p>
+    Each final region is converted to a <code>PieceJson</code> record:
+  </p>
+
+  <table>
+    <thead><tr><th>Field</th><th>How it is set</th></tr></thead>
+    <tbody>
+      <tr><td><code>cells</code></td><td>The flat-index array of the region, exactly as produced by <code>CarveRegion</code>.</td></tr>
+      <tr><td><code>anchors[0]</code></td><td>Minimum flat index in <code>cells</code> — the top-left-most triangle, used by the snap system as the placement reference point.</td></tr>
+      <tr><td><code>color</code></td><td>Hex string from a per-level Fisher-Yates–shuffled 16-colour palette (colours are ~22° apart on the hue wheel). Assigned with <code>i % 16</code> so each piece gets a unique hue for up to 16 pieces.</td></tr>
+      <tr><td><code>spawnX / spawnY</code></td><td>Uniform random scatter within <code>_traySpread</code> radius around <code>_trayCenter</code> (defaults to world position (0, −2.4)).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Colour palette (16 hues, ~22° spacing)</h3>
+
+  <p>
+    <span class="swatch" style="background:#FF2222"></span><code>#FF2222</code> red &nbsp;
+    <span class="swatch" style="background:#FF6600"></span><code>#FF6600</code> orange-red &nbsp;
+    <span class="swatch" style="background:#FF9900"></span><code>#FF9900</code> orange &nbsp;
+    <span class="swatch" style="background:#FFD700"></span><code>#FFD700</code> golden yellow<br>
+    <span class="swatch" style="background:#AADD00"></span><code>#AADD00</code> yellow-green &nbsp;
+    <span class="swatch" style="background:#33CC33"></span><code>#33CC33</code> green &nbsp;
+    <span class="swatch" style="background:#00BB77"></span><code>#00BB77</code> spring green &nbsp;
+    <span class="swatch" style="background:#00CCCC"></span><code>#00CCCC</code> cyan<br>
+    <span class="swatch" style="background:#0099DD"></span><code>#0099DD</code> azure &nbsp;
+    <span class="swatch" style="background:#0055FF"></span><code>#0055FF</code> blue &nbsp;
+    <span class="swatch" style="background:#5533FF"></span><code>#5533FF</code> blue-violet &nbsp;
+    <span class="swatch" style="background:#AA00FF"></span><code>#AA00FF</code> violet<br>
+    <span class="swatch" style="background:#DD00AA"></span><code>#DD00AA</code> magenta &nbsp;
+    <span class="swatch" style="background:#FF0066"></span><code>#FF0066</code> rose &nbsp;
+    <span class="swatch" style="background:#FF66AA"></span><code>#FF66AA</code> light pink &nbsp;
+    <span class="swatch" style="background:#AA5500"></span><code>#AA5500</code> brown
+  </p>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <h2>8. Referenced Algorithms</h2>
+
+  <table>
+    <thead><tr><th>Algorithm</th><th>Where used</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Breadth-First Search (BFS)</strong></td>
+        <td><code>TrianglePartitioner.CarveRegion</code></td>
+        <td>Guarantees every carved region is topologically connected (no orphaned triangles).</td>
+      </tr>
+      <tr>
+        <td><strong>Fisher-Yates Shuffle</strong></td>
+        <td><code>TrianglePartitioner.Shuffle&lt;T&gt;</code> &amp; <code>LevelGenerator.ShuffledPalette</code></td>
+        <td>Uniform-random permutation in O(n) time. Used for neighbour ordering (shape variety) and colour assignment (no repeated hues).</td>
+      </tr>
+      <tr>
+        <td><strong>Greedy Nearest-Neighbour Merge</strong></td>
+        <td><code>LevelGenerator.FindNearestRegion</code> + <code>MergeRegions</code></td>
+        <td>Constraint-satisfying region merge that keeps merged shapes spatially compact rather than merging across the board.</td>
+      </tr>
+      <tr>
+        <td><strong>Lazy Memoisation (Dictionary cache)</strong></td>
+        <td><code>LevelGenerator.GetCentroid</code></td>
+        <td>Avoids redundant O(|region|) centroid summation across repeated nearest-neighbour queries. Invalidated on merge.</td>
+      </tr>
+      <tr>
+        <td><strong>Cursor-based linear scan</strong></td>
+        <td><code>TrianglePartitioner.HasUnassigned</code></td>
+        <td>O(T) amortised seed search — cursor advances forward only, never backtracks. Replaces naïve O(T²) re-scan.</td>
+      </tr>
+      <tr>
+        <td><strong>Seeded PRNG (<code>System.Random</code>)</strong></td>
+        <td>Entire pipeline</td>
+        <td>Reproducible level generation: identical seed → identical layout. Seed defaults to <code>Environment.TickCount</code> for truly random levels.</td>
+      </tr>
+      <tr>
+        <td><strong>Pre-allocated reusable buffers</strong></td>
+        <td><code>_carveResult</code>, <code>_carveQueue</code>, <code>_neighborBuffer</code></td>
+        <td>Eliminates per-call heap allocations inside the hot BFS loop, reducing GC pressure during generation.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <h2>9. End-to-End Flow</h2>
+
+<div class="diagram">LevelGenerator.Generate(DifficultyConfig config, int seed)
+│
+├─ 1. seed = (seed == 0) ? Environment.TickCount : seed
+│       _centroidCache.Clear()
+│       rng = new System.Random(seed)
+│
+├─ 2. partitioner = new TrianglePartitioner(N, rng)
+│       _assigned[N²×2] = false,  _nextSeedCursor = 0
+│
+├─ 3. PARTITION LOOP ─────────────────────────────────────────────────
+│   │
+│   ├─ HasUnassigned(out seedFlat)
+│   │     cursor scan — O(1) amortised, O(T) total
+│   │
+│   ├─ targetSize = rng.Next(minTriSize, maxTriSize + 1)
+│   │
+│   ├─ region = CarveRegion(seedFlat, targetSize)
+│   │     BFS + Fisher-Yates neighbour shuffle
+│   │     ≤ 3 neighbours per node, stops at targetSize or boundary
+│   │
+│   ├─ regions.Add(region)
+│   │
+│   └─ if region.Length &lt; minTriSize AND regions.Count &gt; minPieces:
+│         nearest = FindNearestRegion(region, …)   ← centroid cache
+│         MergeRegions(regions, region, nearest)   ← cache invalidated
+│
+├─ 4. POST-MERGE ─────────────────────────────────────────────────────
+│       while regions.Count &gt; maxPieces:
+│           MergeSmallestIntoNearest(regions, N)
+│
+├─ 5. palette = ShuffledPalette(rng)
+│       Fisher-Yates on 16-colour array
+│
+└─ 6. ASSEMBLE pieces[regions.Count]
+        for i, region in regions:
+            anchor  = min(region)              → anchors[0]
+            spawn   = trayCenter + rng scatter → spawnX, spawnY
+            color   = palette[i % 16]
+            PieceJson { cells, color, anchors, spawnX, spawnY }
+
+→ return LevelData { grid { size = N }, pieces[] }</div>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <h2>10. Complexity Summary</h2>
+
+  <table>
+    <thead><tr><th>Phase / Operation</th><th>Time</th><th>Space</th></tr></thead>
+    <tbody>
+      <tr><td>Triangle adjacency query</td><td>O(1)</td><td>O(1)</td></tr>
+      <tr><td>HasUnassigned (all calls combined)</td><td>O(T) amortised</td><td>O(1)</td></tr>
+      <tr><td>CarveRegion (single call)</td><td>O(targetSize)</td><td>O(1) — reused buffers</td></tr>
+      <tr><td>All CarveRegion calls combined</td><td>O(T)</td><td>O(T) — _assigned array</td></tr>
+      <tr><td>Centroid computation (amortised via cache)</td><td>O(T) total</td><td>O(R) — cache entries</td></tr>
+      <tr><td>Post-merge pass</td><td>O(R² · S̄)</td><td>O(1) extra</td></tr>
+      <tr><td><strong>Overall</strong></td><td><strong>O(T + R² · S̄)</strong></td><td><strong>O(T)</strong></td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    <em>T = N²×2 triangles, R = final piece count (≤ maxPieces ≤ 12), S̄ = average piece size.</em><br>
+    For the largest supported grid (N=6, T=72, R≤12) the entire pipeline completes in well under 1 ms.
+  </p>
+
+  <hr />
+  <p style="color:#999; font-size:0.84em; text-align:center;">
+    Blokfit — Procedural Generation Algorithm &nbsp;·&nbsp; Internal Design Document &nbsp;·&nbsp; 2026-03-31
+  </p>
+
+</div>
+</body>
+</html>

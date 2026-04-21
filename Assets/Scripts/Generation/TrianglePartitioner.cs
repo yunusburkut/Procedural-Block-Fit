@@ -20,20 +20,20 @@ namespace Blokfit.Generation
     /// </summary>
     public class TrianglePartitioner
     {
-        private readonly bool[]        _assigned;          // true once a triangle is claimed by a region
-        private readonly int           _n;                 // grid side length
-        private readonly int           _total;             // n * n * 2
+        private readonly bool[] _assigned; // true once a triangle is claimed by a region
+        private readonly int _n; // grid side length
+        private readonly int _total; // n * n * 2
         private readonly System.Random _rng;
-        private readonly List<int>     _neighborBuffer = new List<int>(3);   // reused to avoid per-call allocs
-        private readonly List<int>     _carveResult    = new List<int>();    // reused across CarveRegion calls
-        private readonly Queue<int>    _carveQueue     = new Queue<int>();   // reused across CarveRegion calls
-        private int                    _nextSeedCursor;                      // HasUnassigned never scans backwards
+        private readonly List<int> _neighborBuffer = new List<int>(3); // reused to avoid per-call allocs
+        private readonly List<int> _carveResult = new List<int>(); // reused across CarveRegion calls
+        private readonly Queue<int> _carveQueue = new Queue<int>(); // reused across CarveRegion calls
+        private int _nextSeedCursor; // HasUnassigned never scans backwards
 
         public TrianglePartitioner(int n, System.Random rng)
         {
-            _n        = n;
-            _total    = n * n * 2;
-            _rng      = rng;
+            _n = n;
+            _total = n * n * 2;
+            _rng = rng;
             _assigned = new bool[_total];
         }
 
@@ -51,7 +51,7 @@ namespace Blokfit.Generation
 
             while (_carveQueue.Count > 0 && _carveResult.Count < targetSize)
             {
-                int current   = _carveQueue.Dequeue();
+                int current = _carveQueue.Dequeue();
                 var neighbors = GetFreeNeighbors(current);
                 Shuffle(neighbors);
 
@@ -75,33 +75,39 @@ namespace Blokfit.Generation
         {
             while (_nextSeedCursor < _total)
             {
-                if (!_assigned[_nextSeedCursor]) { seedFlat = _nextSeedCursor; return true; }
+                if (!_assigned[_nextSeedCursor])
+                {
+                    seedFlat = _nextSeedCursor;
+                    return true;
+                }
+
                 _nextSeedCursor++;
             }
+
             seedFlat = -1;
             return false;
         }
 
         private List<int> GetFreeNeighbors(int flat)
         {
-            int type     = flat % 2;
+            int type = flat % 2;
             int cellFlat = flat / 2;
-            int col      = cellFlat % _n;
-            int row      = cellFlat / _n;
+            int col = cellFlat % _n;
+            int row = cellFlat / _n;
 
             _neighborBuffer.Clear();
 
             if (type == 0) // lower → neighbours are all upper tris
             {
-                AddIfFree(_neighborBuffer, col,     row,     1); // same cell, diagonal
-                if (row > 0)     AddIfFree(_neighborBuffer, col,     row - 1, 1); // below
-                if (col < _n-1)  AddIfFree(_neighborBuffer, col + 1, row,     1); // right
+                AddIfFree(_neighborBuffer, col, row, 1); // same cell, diagonal
+                if (row > 0) AddIfFree(_neighborBuffer, col, row - 1, 1); // below
+                if (col < _n - 1) AddIfFree(_neighborBuffer, col + 1, row, 1); // right
             }
-            else           // upper → neighbours are all lower tris
+            else // upper → neighbours are all lower tris
             {
-                AddIfFree(_neighborBuffer, col,     row,     0); // same cell, diagonal
-                if (row < _n-1)  AddIfFree(_neighborBuffer, col,     row + 1, 0); // above
-                if (col > 0)     AddIfFree(_neighborBuffer, col - 1, row,     0); // left
+                AddIfFree(_neighborBuffer, col, row, 0); // same cell, diagonal
+                if (row < _n - 1) AddIfFree(_neighborBuffer, col, row + 1, 0); // above
+                if (col > 0) AddIfFree(_neighborBuffer, col - 1, row, 0); // left
             }
 
             return _neighborBuffer;

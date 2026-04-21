@@ -1,513 +1,735 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Blokfit — Project Architecture &amp; System Overview</title>
-<style>
-  body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    font-size: 13px;
-    line-height: 1.65;
-    color: #1a1a1a;
-    max-width: 900px;
-    margin: 40px auto;
-    padding: 0 32px 80px;
-  }
-  h1 { font-size: 22px; border-bottom: 2px solid #222; padding-bottom: 10px; margin-bottom: 6px; }
-  .subtitle { color: #555; font-size: 12px; margin-bottom: 32px; }
-  h2 { font-size: 16px; margin-top: 40px; margin-bottom: 10px; color: #111;
-       border-left: 5px solid #444; padding-left: 10px; background: #f7f7f7; padding-top: 4px; padding-bottom: 4px; }
-  h3 { font-size: 13px; margin-top: 20px; margin-bottom: 4px; color: #222; font-weight: bold; }
-  h4 { font-size: 12px; margin-top: 14px; margin-bottom: 2px; color: #444; font-style: italic; font-weight: bold; }
-  p  { margin: 6px 0 10px; }
-  pre {
-    background: #f4f4f4;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 10px 14px;
-    font-size: 11.5px;
-    font-family: 'Consolas', monospace;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    margin: 8px 0;
-  }
-  code {
-    background: #f0f0f0;
-    padding: 1px 4px;
-    border-radius: 3px;
-    font-family: 'Consolas', monospace;
-    font-size: 11.5px;
-  }
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 14px 0;
-    font-size: 12px;
-  }
-  th, td { border: 1px solid #ccc; padding: 6px 11px; text-align: left; }
-  th { background: #e8e8e8; font-weight: bold; }
-  tr:nth-child(even) td { background: #fafafa; }
-  ul, ol { padding-left: 22px; margin: 6px 0 10px; }
-  li { margin: 3px 0; }
-  hr { border: none; border-top: 1px solid #ddd; margin: 36px 0; }
-  .tag {
-    display: inline-block;
-    background: #ddd;
-    border-radius: 3px;
-    padding: 1px 6px;
-    font-size: 10.5px;
-    font-family: monospace;
-    margin-right: 4px;
-    color: #333;
-  }
-  .note {
-    background: #fffbe6;
-    border-left: 4px solid #e0c000;
-    padding: 8px 12px;
-    margin: 10px 0;
-    font-size: 12px;
-  }
-  .flow {
-    background: #f0f4ff;
-    border: 1px solid #bcd;
-    border-radius: 4px;
-    padding: 10px 16px;
-    font-family: 'Consolas', monospace;
-    font-size: 11.5px;
-    margin: 10px 0;
-    line-height: 2;
-  }
-  @media print {
-    body { margin: 20px; }
-    pre, table, .flow { page-break-inside: avoid; }
-    h2 { page-break-after: avoid; }
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blokfit — Project Architecture</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.8;
+      color: #1a1a2e;
+      background: #f4f6fb;
+      padding: 40px 20px;
+    }
+
+    .page {
+      max-width: 920px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 28px rgba(0,0,0,0.10);
+      padding: 58px 68px;
+    }
+
+    h1 {
+      font-size: 2em;
+      color: #16213e;
+      border-bottom: 3px solid #0f3460;
+      padding-bottom: 12px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 0.93em;
+      margin-bottom: 38px;
+    }
+
+    h2 {
+      font-size: 1.22em;
+      color: #0f3460;
+      margin-top: 48px;
+      margin-bottom: 12px;
+      border-left: 4px solid #e94560;
+      padding-left: 10px;
+    }
+
+    h3 {
+      font-size: 1.03em;
+      color: #16213e;
+      margin-top: 26px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    p { margin-bottom: 13px; }
+    ul, ol { padding-left: 26px; margin-bottom: 14px; }
+    li { margin-bottom: 5px; }
+
+    code {
+      font-family: 'Cascadia Code', 'Fira Mono', Consolas, monospace;
+      font-size: 0.87em;
+      background: #eef1f8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #c0392b;
+    }
+
+    pre {
+      background: #1e2130;
+      color: #abb2bf;
+      border-radius: 8px;
+      padding: 20px 26px;
+      font-family: 'Cascadia Code', 'Fira Mono', Consolas, monospace;
+      font-size: 0.82em;
+      line-height: 1.65;
+      overflow-x: auto;
+      margin: 14px 0 22px;
+    }
+
+    .kw  { color: #c678dd; }
+    .ty  { color: #e5c07b; }
+    .cm  { color: #7f848e; font-style: italic; }
+    .st  { color: #98c379; }
+    .nm  { color: #d19a66; }
+
+    .callout {
+      background: #eef6ff;
+      border-left: 4px solid #3498db;
+      border-radius: 0 6px 6px 0;
+      padding: 12px 18px;
+      margin: 18px 0;
+      font-size: 0.93em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 24px;
+      font-size: 0.91em;
+    }
+
+    th {
+      background: #0f3460;
+      color: #fff;
+      text-align: left;
+      padding: 9px 14px;
+      font-weight: 600;
+    }
+
+    td {
+      padding: 8px 14px;
+      border-bottom: 1px solid #e2e6f0;
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td { background: #f6f8fc; }
+
+    .diagram {
+      background: #1e2130;
+      color: #abb2bf;
+      font-family: 'Cascadia Code', Consolas, monospace;
+      font-size: 0.80em;
+      padding: 20px 26px;
+      border-radius: 8px;
+      margin: 14px 0 22px;
+      white-space: pre;
+      line-height: 1.55;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #e0e4ef;
+      margin: 44px 0;
+    }
+
+    .ns {
+      display: inline-block;
+      background: #0f3460;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 0.74em;
+      padding: 1px 8px;
+      margin-left: 6px;
+      vertical-align: middle;
+      font-weight: 600;
+      font-family: 'Cascadia Code', Consolas, monospace;
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .page { box-shadow: none; border-radius: 0; padding: 30px 40px; max-width: 100%; }
+      pre, .diagram { page-break-inside: avoid; }
+      h2, h3 { page-break-after: avoid; }
+    }
+  </style>
 </head>
 <body>
+<div class="page">
 
-<h1>Blokfit — Project Architecture &amp; System Overview</h1>
-<p class="subtitle">Unity 2D Puzzle Game &nbsp;|&nbsp; C# / Unity &nbsp;|&nbsp; 2026</p>
+  <h1>Blokfit — Project Architecture</h1>
+  <p class="subtitle">General design reference &nbsp;·&nbsp; <em>Blokfit Unity Puzzle Project</em> &nbsp;·&nbsp; 2026-03-31</p>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>1. Project Summary</h2>
-<p>
-  Blokfit is a 2D puzzle game in which the player fills an N×N triangle grid by dragging
-  puzzle pieces from a tray onto the board. Each piece is an irregular polygon composed of
-  one or more right-angled triangles. A level is complete when every triangle on the board
-  is occupied. Levels can be generated procedurally at runtime or loaded from hand-crafted
-  JSON files.
-</p>
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>1. What Is Blokfit?</h2>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>2. Namespace &amp; Folder Structure</h2>
-<table>
-  <thead><tr><th>Namespace</th><th>Folder</th><th>Responsibility</th></tr></thead>
-  <tbody>
-    <tr><td><code>Blokfit.Core</code></td><td><code>Scripts/Core/</code></td><td>Game loop orchestration, level data model, serialisation</td></tr>
-    <tr><td><code>Blokfit.Board</code></td><td><code>Scripts/Board/</code></td><td>Board state, snap-point grid, occupancy map, snap logic</td></tr>
-    <tr><td><code>Blokfit.Pieces</code></td><td><code>Scripts/Pieces/</code></td><td>Piece runtime data, visual construction, drag behaviour, spawning</td></tr>
-    <tr><td><code>Blokfit.Generation</code></td><td><code>Scripts/Generation/</code></td><td>Procedural level generation, triangle partitioning</td></tr>
-    <tr><td><code>Blokfit.Commands</code></td><td><code>Scripts/Commands/</code></td><td>Undo/redo command objects</td></tr>
-    <tr><td><code>Blokfit.Input</code></td><td><code>Scripts/Input/</code></td><td>Single-touch drag gating, drag-state object</td></tr>
-    <tr><td><code>Blokfit.UI</code></td><td><code>Scripts/UI/</code></td><td>Difficulty buttons, completion panel, text animations</td></tr>
-    <tr><td><code>Blokfit.ScriptableObjects</code></td><td><code>Scripts/ScriptableObjects/</code></td><td>DifficultyConfig asset definition</td></tr>
-    <tr><td><code>Blokfit.Editor</code></td><td><code>Scripts/Editor/</code></td><td>Level Editor window (Unity Editor only)</td></tr>
-  </tbody>
-</table>
+  <p>
+    Blokfit is a 2D puzzle game built in Unity (URP, 2D). The player is presented with a
+    square board subdivided into triangles and a set of irregularly shaped puzzle pieces.
+    Each piece must be dragged onto the board until every triangle is covered — completing
+    the level. Levels are generated procedurally at runtime from a
+    <code>DifficultyConfig</code>, or downloaded from a server, or authored manually in a
+    built-in Level Editor tool.
+  </p>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>3. Core Data Model</h2>
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>2. Namespace &amp; File Map</h2>
 
-<h3>3.1 Level JSON Format (<code>LevelData</code>)</h3>
-<p>
-  The canonical level representation is a plain serialisable object with two fields:
-</p>
-<pre>{
-  "grid":   { "size": 4 },          // N×N board
-  "pieces": [
-    {
-      "cells":   [0, 1, 4, 5],      // triangle flat-indices
-      "color":   "#FF2222",         // HTML hex
-      "anchors": [0],               // primary anchor flat-index
-      "spawnX":  -1.2,              // tray world position
-      "spawnY":  -2.4
-    },
-    ...
-  ]
+  <table>
+    <thead><tr><th>Namespace</th><th>Files</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>Blokfit.Core</code></td>
+        <td><code>GameManager</code>, <code>LevelData</code>, <code>LevelSerializer</code></td>
+        <td>Central game loop, level data model, JSON serialisation.</td>
+      </tr>
+      <tr>
+        <td><code>Blokfit.Generation</code></td>
+        <td><code>LevelGenerator</code>, <code>TrianglePartitioner</code></td>
+        <td>Procedural level generation — flood-fill, constraint enforcement.</td>
+      </tr>
+      <tr>
+        <td><code>Blokfit.Board</code></td>
+        <td><code>BoardController</code>, <code>SnapSystem</code>, <code>SnapPoint</code></td>
+        <td>Board state, occupancy tracking, snap-to-grid logic.</td>
+      </tr>
+      <tr>
+        <td><code>Blokfit.Pieces</code></td>
+        <td><code>PieceBehaviour</code>, <code>PieceData</code>, <code>PieceFactory</code>, <code>PieceSpawner</code>, <code>PieceSortOrder</code></td>
+        <td>Piece rendering, collision, drag-and-drop, spawn lifecycle.</td>
+      </tr>
+      <tr>
+        <td><code>Blokfit.Input</code></td>
+        <td><code>InputHandler</code>, <code>DragState</code></td>
+        <td>Single-drag gatekeeper; blocking input during non-interactive states.</td>
+      </tr>
+      <tr>
+        <td><code>Blokfit.Commands</code></td>
+        <td><code>ICommand</code>, <code>PlacePieceCommand</code></td>
+        <td>Command pattern — reversible placement + undo stack.</td>
+      </tr>
+      <tr>
+        <td><code>Blokfit.UI</code></td>
+        <td><code>UIOverlay</code></td>
+        <td>Difficulty buttons, completion panel, DOTween text animations.</td>
+      </tr>
+      <tr>
+        <td><code>Blokfit.ScriptableObjects</code></td>
+        <td><code>DifficultyConfig</code></td>
+        <td>Per-difficulty parameters (grid size, piece count/size bounds).</td>
+      </tr>
+      <tr>
+        <td><code>Blokfit.LevelEditor</code></td>
+        <td><code>LevelEditorWindow</code> (Editor-only)</td>
+        <td>Unity Editor tool for hand-authoring levels and exporting JSON.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>3. Unity Scene Hierarchy</h2>
+
+<div class="diagram">[-- Scene --]
+  ├── Main Camera
+  ├── Global Light 2D
+  └── EventSystem
+
+[-- Systems --]
+  ├── GameManager          ← Blokfit.Core.GameManager
+  ├── BoardController      ← Blokfit.Board.BoardController
+  │     └── BoardQuad      ← MeshRenderer (board background + shader)
+  ├── SnapSystem           ← Blokfit.Board.SnapSystem
+  ├── PieceSpawner         ← Blokfit.Pieces.PieceSpawner
+  ├── LevelGenerator       ← Blokfit.Generation.LevelGenerator
+  ├── InputHandler         ← Blokfit.Input.InputHandler
+  ├── Tray                 ← spawn position anchor Transform
+  └── LevelLoader          ← handmade level TextAsset host
+
+UIOverlay                  ← Canvas (stays at root — Unity UI requirement)
+  ├── Easy - Button
+  ├── Medium - Button
+  ├── Hard - Button
+  ├── Handmade - Button
+  └── CompPanel            ← completion panel (DOTween fade-in)</div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>4. Data Model</h2>
+
+  <p>All level data is described by three serialisable C# classes in <code>Blokfit.Core</code>:</p>
+
+<pre><span class="kw">class</span> <span class="ty">LevelData</span>
+{
+    <span class="ty">GridData</span>    grid;      <span class="cm">// board dimensions</span>
+    <span class="ty">PieceJson</span>[] pieces;   <span class="cm">// one entry per puzzle piece</span>
+}
+
+<span class="kw">class</span> <span class="ty">GridData</span>
+{
+    <span class="kw">int</span> size;              <span class="cm">// N — board is N×N cells, 2N² triangles</span>
+}
+
+<span class="kw">class</span> <span class="ty">PieceJson</span>
+{
+    <span class="kw">int</span>[]  cells;          <span class="cm">// triangle flat-indices: (row*N+col)*2+type</span>
+    <span class="kw">string</span> color;          <span class="cm">// HTML hex e.g. "#FF6600"</span>
+    <span class="kw">int</span>[]  anchors;        <span class="cm">// [0] = primary anchor (min flat index)</span>
+    <span class="kw">float</span>  spawnX, spawnY; <span class="cm">// world-space tray spawn position</span>
 }</pre>
-<p>
-  Triangle flat-index encoding: <code>flat = (row × N + col) × 2 + type</code>,
-  where <code>type 0</code> = lower triangle (BL–BR–TR corners) and
-  <code>type 1</code> = upper triangle (BL–TR–TL corners).
-  <code>LevelSerializer</code> wraps <code>JsonUtility.ToJson / FromJson</code>.
-</p>
 
-<h3>3.2 Runtime Piece Data (<code>PieceData</code>, <code>TriOffset</code>)</h3>
-<p>
-  <code>PieceFactory.FromJson</code> converts absolute flat-indices into piece-local
-  <code>TriOffset</code> structs — <code>(dcol, drow, type)</code> relative to the anchor
-  vertex. This local representation is used at placement time to compute which board cells
-  the piece occupies regardless of where it is dropped.
-</p>
+  <p>
+    At runtime, <code>PieceFactory.FromJson()</code> converts <code>PieceJson</code> into
+    the immutable <code>PieceData</code> record which stores piece-local <code>TriOffset</code>
+    structs (column delta, row delta, type) relative to the anchor vertex.
+  </p>
 
-<h3>3.3 Difficulty Configuration (<code>DifficultyConfig</code>)</h3>
-<p>
-  A <code>ScriptableObject</code> asset (created via
-  <em>Assets › Create › Blokfit › Difficulty Config</em>) that stores:
-  <code>gridSize</code>, <code>minPieces</code>, <code>maxPieces</code>,
-  <code>minPieceSize</code>, <code>maxPieceSize</code>, and <code>difficultyName</code>.
-  Three instances (Easy / Medium / Hard) are referenced by <code>GameManager</code>.
-</p>
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>5. Full Game Loop</h2>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>4. System Architecture</h2>
+<div class="diagram">App Start
+│
+└── GameManager.Start()
+      │
+      ├── Subscribe events:
+      │     BoardController.OnBoardCompleted  → HandleBoardCompleted
+      │     SnapSystem.OnMoveExecuted         → HandleMoveExecuted (push undo)
+      │
+      └── BeginLevel(easyConfig)   ← default first level
 
-<h3>4.1 Component Diagram</h3>
-<div class="flow">
-GameManager
-  ├─ LevelGenerator  ──► (procedural)  LevelData
-  ├─ LevelSerializer ──► (JSON)        LevelData
-  │
-  ├─ BoardController          owns snap-point grid + occupancy map
-  ├─ SnapSystem               snap-to-grid logic on pointer-up
-  ├─ PieceSpawner             instantiates PieceBehaviour per level
-  │     └─ PieceFactory       JSON → PieceData (static, no MonoBehaviour)
-  │
-  ├─ InputHandler             single-touch drag gating
-  └─ UIOverlay                difficulty buttons + completion panel
-        └─ (callbacks back to GameManager)
-</div>
 
-<h3>4.2 Design Patterns Used</h3>
-<table>
-  <thead><tr><th>Pattern</th><th>Where</th><th>Purpose</th></tr></thead>
-  <tbody>
-    <tr>
-      <td><strong>Command</strong></td>
-      <td><code>ICommand</code>, <code>PlacePieceCommand</code>, <code>Stack&lt;ICommand&gt;</code></td>
-      <td>Reversible piece placements; undo stack in GameManager</td>
-    </tr>
-    <tr>
-      <td><strong>Observer (C# events)</strong></td>
-      <td><code>BoardController.OnBoardCompleted</code>, <code>SnapSystem.OnMoveExecuted</code></td>
-      <td>Decoupled completion detection and command recording</td>
-    </tr>
-    <tr>
-      <td><strong>Factory (static)</strong></td>
-      <td><code>PieceFactory.FromJson</code></td>
-      <td>Converts serialised JSON into typed runtime objects</td>
-    </tr>
-    <tr>
-      <td><strong>ScriptableObject (Data Asset)</strong></td>
-      <td><code>DifficultyConfig</code></td>
-      <td>Designer-editable difficulty parameters, no code change needed</td>
-    </tr>
-    <tr>
-      <td><strong>Strategy / Template Method</strong></td>
-      <td><code>GameManager.BeginLevel</code> — server fetch vs. procedural vs. handmade</td>
-      <td>Three interchangeable level-loading paths with a shared <code>ApplyLevel</code> finaliser</td>
-    </tr>
-  </tbody>
-</table>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>5. Game Loop</h2>
-
-<h3>5.1 Startup</h3>
-<div class="flow">
-GameManager.Awake()
-  → UIOverlay: wire button callbacks (Easy / Medium / Hard / Handmade / Next Level)
-GameManager.Start()
-  → Subscribe to BoardController.OnBoardCompleted
-  → Subscribe to SnapSystem.OnMoveExecuted
-  → BeginLevel(_easyConfig)   ← auto-starts on first run
-</div>
-
-<h3>5.2 BeginLevel (Procedural)</h3>
-<div class="flow">
 BeginLevel(DifficultyConfig config)
-  → GameState = Idle  (unblocks input)
-  → commandHistory.Clear()
-  → UIOverlay.HideCompletion()
-  → PieceSpawner.DestroyAll()      ← destroys previous level's GameObjects
-  → BoardController.ResetBoard()   ← clears occupancy arrays
-  │
-  ├─ [if _serverBaseUrl set]
-  │     Coroutine: HTTP GET {url}/{difficultyName}.json
-  │     ├─ success → ApplyLevel(LevelSerializer.FromJson(response))
-  │     └─ failure → ApplyLevel(LevelGenerator.Generate(config))   [fallback]
-  │
-  └─ [else] ApplyLevel(LevelGenerator.Generate(config))
+│
+├── SetState(Idle)               ← unblock input
+├── commandHistory.Clear()
+├── uiOverlay.HideCompletion()
+├── pieceSpawner.DestroyAll()    ← destroy GameObjects, reset sort order
+├── boardController.ResetBoard() ← clear occupancy arrays
+│
+├── [if _serverBaseUrl set]
+│     StartCoroutine(LoadFromServer(config))
+│     → UnityWebRequest.Get("{baseUrl}/{difficultyName}.json")
+│     → on success  : ApplyLevel(LevelSerializer.FromJson(json))
+│     → on failure  : ApplyLevel(levelGenerator.Generate(config))
+│
+└── [else]
+      ApplyLevel(levelGenerator.Generate(config))
 
-ApplyLevel(LevelData)
-  → BoardController.Initialize(gridSize)      ← builds snap-point grid
-  → SnapSystem.SetSnapThreshold(cellSize)
-  → PieceSpawner.SpawnAll(pieces, gridSize)   ← instantiates piece GameObjects
+
+ApplyLevel(LevelData levelData)
+│
+├── boardController.Initialize(levelData.grid.size)
+│     → builds (N+1)² SnapPoints, occupancy arrays, updates board shader
+│
+├── snapSystem.SetSnapThreshold(boardController.CellSize)
+│     → threshold = cellSize × 0.5   (stored squared for hot-path)
+│
+└── pieceSpawner.SpawnAll(levelData.pieces, gridSize)
+      for each PieceJson:
+        → PieceFactory.FromJson()            build PieceData (TriOffsets)
+        → Instantiate(piecePrefab)
+        → piece.Initialize(...)              build sprites, collider, anchors
+        → piece.AnimateIn(index)             DOTween drop-in from Y=8
+
+
+── GAMEPLAY LOOP ────────────────────────────────────────────────────────
+
+  Player touches piece
+  └── PieceBehaviour.OnPointerDown()
+        ├── inputHandler.BeginDrag(this, eventData)   gatekeeper check
+        ├── board.Lift(this)                           remove from occupancy
+        └── SetDragging(true)                          scale 1.1×, boost sort order
+
+  Player drags
+  └── PieceBehaviour.OnDrag()
+        └── transform.position = screenToWorld(eventData.position) + _dragOffset
+
+  Player releases
+  └── PieceBehaviour.OnPointerUp()
+        └── snapSystem.TrySnap(this)
+              ├── nearest = board.GetNearestFreeSnapPoint(anchorWorldPos)   O(1)
+              ├── if dist² ≥ threshold²: FAIL → piece.ReturnToTray(fromPos)
+              ├── board.Place(piece, candidate)
+              │     check all TriOffsets fit on board & are unoccupied
+              │     → mark triangles occupied, _filledTriangles++
+              │     → CheckCompletion()
+              ├── piece.SetPlaced(targetPos)   DOTween snap animation
+              └── raise OnMoveExecuted(PlacePieceCommand)
+                   → GameManager pushes cmd onto commandHistory stack
+
+
+── LEVEL COMPLETE ───────────────────────────────────────────────────────
+
+  BoardController._filledTriangles == _totalTriangles
+  └── OnBoardCompleted fired
+        └── GameManager.HandleBoardCompleted()
+              ├── SetState(LevelComplete)   ← IsBlocked = true (no new drags)
+              └── uiOverlay.ShowCompletion()
+                    └── DOTween fade-in: "Done!" + "Tap to continue"
+
+  Player taps "Next Level"
+  └── StartNextLevel() → BeginLevel(_currentConfig)</div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>6. System Deep-Dives</h2>
+
+  <h3>6.1 GameManager <span class="ns">Blokfit.Core</span></h3>
+
+  <p>
+    The central orchestrator. Holds references to every system and wires them together
+    via callbacks and C# events. Owns the undo stack and the game-state machine.
+  </p>
+
+  <table>
+    <thead><tr><th>Responsibility</th><th>How</th></tr></thead>
+    <tbody>
+      <tr><td>Default level on startup</td><td><code>Start()</code> calls <code>BeginLevel(_easyConfig)</code></td></tr>
+      <tr><td>Level loading (3 paths)</td><td>Server download → procedural generation → handmade JSON</td></tr>
+      <tr><td>Undo</td><td><code>Stack&lt;ICommand&gt; _commandHistory</code> — pushed on every snap, popped by <code>UndoLastMove()</code></td></tr>
+      <tr><td>Input blocking</td><td><code>GameState { Idle, LevelComplete }</code> → sets <code>InputHandler.IsBlocked</code></td></tr>
+      <tr><td>UI wiring</td><td>Passes lambdas to <code>UIOverlay</code> in <code>Awake()</code> — UI has no direct game-logic dependency</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    <strong>Handmade level scatter:</strong> The Level Editor exports pieces with
+    <code>spawnX = spawnY = 0</code>. <code>ScatterSpawnPositions()</code> detects this
+    and distributes pieces in an arc around the tray center with small random jitter,
+    so hand-authored levels require no manual spawn coordinates.
+  </p>
+
+  <h3>6.2 BoardController <span class="ns">Blokfit.Board</span></h3>
+
+  <p>
+    Owns the entire board state. Has no knowledge of dragging or UI — exposes only
+    <code>Place</code> / <code>Lift</code> and fires <code>OnBoardCompleted</code>.
+  </p>
+
+  <table>
+    <thead><tr><th>Internal structure</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>SnapPoint[vRow, vCol]</code></td><td>(N+1)² grid of vertex snap points</td></tr>
+      <tr><td><code>bool[row, col, type]</code> _occupiedTriangles</td><td>Which triangles are filled</td></tr>
+      <tr><td><code>PieceBehaviour[row, col, type]</code> _occupants</td><td>Which piece occupies each triangle</td></tr>
+      <tr><td><code>Dictionary&lt;PieceBehaviour, List&lt;(r,c,t)&gt;&gt;</code></td><td>Reverse lookup — enables O(1) Lift without scanning the full grid</td></tr>
+      <tr><td><code>_filledTriangles</code> counter</td><td>Incremented on Place, decremented on Lift — triggers completion when equal to N²×2</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    <strong>O(1) snap-point lookup:</strong> <code>GetNearestFreeSnapPoint(worldPos)</code>
+    converts world coordinates to fractional grid coordinates and rounds — no linear search needed.
+  </p>
+
+  <p>
+    <strong>Board shader:</strong> <code>MaterialPropertyBlock</code> pushes <code>_GridSize</code>
+    to the board quad's shader so grid lines scale correctly without creating per-instance materials.
+  </p>
+
+  <h3>6.3 SnapSystem <span class="ns">Blokfit.Board</span></h3>
+
+  <p>
+    Stateless service called on pointer-up. Finds the nearest free snap point,
+    validates the placement, and if successful commits it and raises the command event.
+    Uses <strong>squared distance</strong> for the threshold check to avoid a <code>sqrt</code> call.
+  </p>
+
+<pre><span class="cm">// Snap flow:</span>
+primaryAnchorWorldPos → board.GetNearestFreeSnapPoint()      <span class="cm">// O(1)</span>
+distSq = SqrMagnitude(anchorPos − candidate.WorldPosition)
+<span class="kw">if</span> distSq >= _snapThresholdSq: <span class="kw">return</span> <span class="nm">false</span>   <span class="cm">// too far away</span>
+board.Place(piece, candidate)                                <span class="cm">// validate + commit</span>
+piece.SetPlaced(targetPos)                                   <span class="cm">// DOTween to snapped position</span>
+OnMoveExecuted.Invoke(<span class="kw">new</span> PlacePieceCommand(...))            <span class="cm">// push to undo stack</span></pre>
+
+  <h3>6.4 SnapPoint <span class="ns">Blokfit.Board</span></h3>
+
+  <p>
+    Lightweight MonoBehaviour at every grid vertex (N+1)². Stores its grid coordinates
+    and world position. Edge points (col/row = 0 or N) are invisible; interior points
+    render a faint white circle sprite shared across all instances via a
+    <code>static Sprite _sharedSprite</code> — one texture allocation for the entire board.
+  </p>
+
+  <h3>6.5 Piece System <span class="ns">Blokfit.Pieces</span></h3>
+
+  <p><strong>PieceFactory</strong> converts JSON flat indices into piece-local <code>TriOffset</code> structs:</p>
+
+<pre><span class="cm">// Flat index → (col, row, type) → subtract anchor → TriOffset</span>
+anchorCol = (anchors[0] / 2) % N
+anchorRow = (anchors[0] / 2) / N
+
+<span class="kw">for each</span> flat <span class="kw">in</span> cells:
+    col    = (flat / 2) % N
+    row    = (flat / 2) / N
+    type   = flat % 2
+    offset = TriOffset(col − anchorCol, row − anchorRow, type)</pre>
+
+  <p><strong>PieceBehaviour</strong> does five things at <code>Initialize()</code>:</p>
+  <ol>
+    <li>
+      <strong>BuildTriangleSprites</strong> — one child GameObject per triangle, each with a
+      <code>SpriteRenderer</code> using a procedurally generated 64×64 triangle texture.
+      The two textures (lower/upper triangle shapes) are <code>static</code> and shared across
+      all piece instances — allocated once per play session.
+    </li>
+    <li>
+      <strong>BuildCollider</strong> — sets one <code>PolygonCollider2D</code> path per triangle
+      (3 vertices each). Unity's internal composite handles the full irregular shape.
+    </li>
+    <li>
+      <strong>BuildAnchorTransforms</strong> — the piece's own Transform acts as the anchor;
+      pivot is at local (0,0) which aligns with the anchor vertex on the board grid.
+    </li>
+    <li>
+      <strong>BuildSnapDots</strong> — places 1–4 white circle dot visuals at interior vertices
+      (vertices shared by ≥2 of the piece's own triangles). These fade in while dragging to
+      help the player see where the piece will snap. The dot count uses a weighted random roll:
+      ~80% → 1 dot, ~12% → 2, ~5% → 3, ~3% → 4.
+    </li>
+    <li>
+      <strong>AnimateIn</strong> — DOTween <code>OutBounce</code> drop from Y=8 with a
+      per-piece staggered delay (0.12 s × index) so pieces cascade into view.
+    </li>
+  </ol>
+
+  <p><strong>Drag handling (Unity EventSystem):</strong></p>
+
+  <table>
+    <thead><tr><th>Event</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><code>OnPointerDown</code></td><td>Ask <code>InputHandler.BeginDrag</code> (gatekeeper). If allowed: lift from board, boost sort order (+1000), scale to 1.1×.</td></tr>
+      <tr><td><code>OnDrag</code></td><td>Move transform to <code>screenToWorld(position) + _dragOffset</code>. Camera-Z cached at init — avoids per-frame Transform access.</td></tr>
+      <tr><td><code>OnPointerUp</code></td><td>Call <code>SnapSystem.TrySnap</code>. On snap failure: <code>ReturnToTray</code> (DOTween back to pre-drag position).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.6 InputHandler <span class="ns">Blokfit.Input</span></h3>
+
+  <p>A stateless gatekeeper MonoBehaviour. Enforces two invariants:</p>
+  <ul>
+    <li><strong>Single drag</strong> — <code>CurrentDrag != null</code> blocks any new drag from starting.</li>
+    <li><strong>Input block</strong> — <code>IsBlocked = true</code> (set by GameManager on level-complete) prevents all drag input.</li>
+  </ul>
+  <p><code>DragState</code> is a plain data struct holding the active piece reference and pointer ID.</p>
+
+  <h3>6.7 Command Pattern (Undo) <span class="ns">Blokfit.Commands</span></h3>
+
+  <p>
+    Every successful snap creates a <code>PlacePieceCommand</code> and pushes it onto
+    <code>GameManager._commandHistory</code> (a <code>Stack&lt;ICommand&gt;</code>).
+  </p>
+
+  <table>
+    <thead><tr><th>Method</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><code>Execute()</code></td><td>Calls <code>board.Place</code> + <code>piece.SetPlaced</code>. Used for re-do scenarios; not currently exposed in UI.</td></tr>
+      <tr><td><code>Undo()</code></td><td>Calls <code>board.Lift(piece)</code> + <code>piece.ReturnToTray(fromPosition)</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    The command stores: piece reference, board reference, world position before snap
+    (<code>fromPosition</code>), world position after snap (<code>toPosition</code>),
+    and the <code>SnapPoint</code> used — everything needed to replay or reverse the action.
+  </p>
+
+  <h3>6.8 UIOverlay <span class="ns">Blokfit.UI</span></h3>
+
+  <p>
+    Unity Canvas overlay. Button listeners are registered in <code>Awake()</code>;
+    callbacks are injected by <code>GameManager</code> — keeping UI completely decoupled
+    from game logic.
+  </p>
+
+  <table>
+    <thead><tr><th>Control</th><th>Callback injected by GameManager</th></tr></thead>
+    <tbody>
+      <tr><td>Easy / Medium / Hard buttons</td><td><code>BeginLevel(easyConfig / mediumConfig / hardConfig)</code></td></tr>
+      <tr><td>Handmade button</td><td><code>LoadHandmadeLevel()</code></td></tr>
+      <tr><td>Next Level button (completion panel)</td><td><code>StartNextLevel()</code></td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    <strong>Completion panel animation:</strong> "Done!" fades in over 0.5 s immediately;
+    "Tap to continue" fades in after a 0.4 s delay — both via DOTween <code>DOFade</code>.
+    On new level start, both texts are killed and hidden instantly.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>7. Level Loading Paths</h2>
+
+<div class="diagram">                    ┌──────────────────────────┐
+                    │       GameManager        │
+                    └───────────┬──────────────┘
+                                │ BeginLevel(config)
+              ┌─────────────────┼───────────────────────┐
+              │                 │                       │
+    _serverBaseUrl set     _serverBaseUrl empty    Handmade button
+              │                 │                       │
+    LoadFromServer()      LevelGenerator           LevelSerializer
+    UnityWebRequest          .Generate()            .FromJson()
+    GET /{name}.json             │                  (TextAsset)
+              │             TrianglePartitioner          │
+    ┌─ success │             BFS flood-fill              │
+    │  FromJson()                │                ScatterSpawnPositions()
+    │                       LevelData              arc distribution
+    └─ fail                      │                       │
+       Generate() ───────────────┴───────────────────────┘
+                                 │
+                           ApplyLevel(LevelData)
+                          /         |          \
+            board.Initialize  snap.SetThreshold  spawner.SpawnAll</div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>8. Generation System</h2>
+
+  <p>
+    Procedural generation is a two-class pipeline (detailed in the companion document
+    <em>ProceduralGeneration_Algorithm.html</em>). Brief summary:
+  </p>
+
+  <table>
+    <thead><tr><th>Class</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>TrianglePartitioner</code></td>
+        <td>Randomised BFS flood-fill on an N×N×2 triangle grid. Forward-only cursor seed scan (O(T) amortised). Pre-allocated List/Queue buffers — zero per-call heap allocations in the hot loop.</td>
+      </tr>
+      <tr>
+        <td><code>LevelGenerator : MonoBehaviour</code></td>
+        <td>Orchestrates partitioning, enforces piece-count and piece-size constraints via centroid-based nearest-neighbour merging, assembles <code>PieceJson</code> records with shuffled 16-colour palette and random tray spawn positions.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>DifficultyConfig ScriptableObject assets</h3>
+  <table>
+    <thead><tr><th>Asset</th><th>gridSize</th><th>minPieces</th><th>maxPieces</th><th>pieceSize range (squares)</th></tr></thead>
+    <tbody>
+      <tr><td>EasyConfig</td><td>4</td><td>5</td><td>8</td><td>2 – 3</td></tr>
+      <tr><td>MediumConfig</td><td>5</td><td>6</td><td>10</td><td>2 – 4</td></tr>
+      <tr><td>HardConfig</td><td>6</td><td>8</td><td>12</td><td>3 – 5</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>9. Level Editor (Editor-Only Tool)</h2>
+
+  <p>
+    Accessed via <strong>Tools ▶ Blokfit ▶ Level Editor</strong> (shortcut <kbd>Ctrl+Alt+L</kbd>).
+    A custom <code>EditorWindow</code> that lets designers hand-author levels and export them
+    as JSON fully compatible with the runtime loader.
+  </p>
+
+<div class="diagram">┌──────────────────────┬──────────────────────────────────────────┐
+│  Left Panel          │  Right Panel (Grid)                      │
+│                      │                                          │
+│  Grid Size N         │  N×N triangle grid drawn with            │
+│  [slider 2-10]       │  Handles.DrawAAConvexPolygon             │
+│  [Apply button]      │                                          │
+│                      │  Left-click  → assign tri to piece       │
+│  Pieces              │  Left-click  → toggle off (if same)      │
+│  [colour] Name  [✕]  │  Right-click → unassign tri              │
+│  [colour] Name  [✕]  │                                          │
+│  + New Piece         │  Selected piece highlighted +18% white   │
+│                      │  Live triangle count per piece           │
+│  Active: ✔           │                                          │
+│  X tri assigned      │  Top: "Unassigned: N / M tri" counter    │
+└──────────────────────┴──────────────────────────────────────────┘
+Toolbar: [Clear]  [Export JSON]
+         Warns before export if unassigned triangles remain</div>
+
+  <p><strong>Export produces a valid <code>LevelData</code> JSON</strong> with:</p>
+  <ul>
+    <li><code>grid.size = N</code></li>
+    <li>One <code>PieceJson</code> per non-empty piece (cells = assigned flat indices, anchor = minimum flat index, spawnX/Y = 0 — scattered at runtime by <code>ScatterSpawnPositions</code>).</li>
+    <li>Default save directory: <code>Assets/Resources/Levels/</code>. Immediately imported via <code>AssetDatabase.ImportAsset</code>.</li>
+  </ul>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>10. Design Patterns</h2>
+
+  <table>
+    <thead><tr><th>Pattern</th><th>Where</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Command</strong></td>
+        <td><code>ICommand</code> / <code>PlacePieceCommand</code> / <code>GameManager._commandHistory</code></td>
+        <td>Encapsulates placement as a reversible object; enables arbitrary-depth undo without coupling pieces to game state.</td>
+      </tr>
+      <tr>
+        <td><strong>Observer (C# events)</strong></td>
+        <td><code>BoardController.OnBoardCompleted</code>, <code>SnapSystem.OnMoveExecuted</code></td>
+        <td>Board and snap system fire events without knowing what will handle them — GameManager subscribes without the board depending on it.</td>
+      </tr>
+      <tr>
+        <td><strong>Factory</strong></td>
+        <td><code>PieceFactory.FromJson()</code></td>
+        <td>Converts raw JSON data into fully initialised runtime objects, isolating JSON structure details from game logic.</td>
+      </tr>
+      <tr>
+        <td><strong>Flyweight (static shared sprites)</strong></td>
+        <td><code>PieceBehaviour._lowerTriSprite / _upperTriSprite</code>, <code>SnapPoint._sharedSprite</code></td>
+        <td>One texture allocation per shape type regardless of piece count or board size.</td>
+      </tr>
+      <tr>
+        <td><strong>Lazy Memoisation</strong></td>
+        <td><code>LevelGenerator._centroidCache</code></td>
+        <td>Computes region centroids on first access and caches by array reference. Invalidated on merge. Avoids O(|region|) recomputation in nearest-neighbour searches.</td>
+      </tr>
+      <tr>
+        <td><strong>ScriptableObject (Data config)</strong></td>
+        <td><code>DifficultyConfig</code></td>
+        <td>Designer-editable parameters completely decoupled from code — swappable in the Inspector without recompile.</td>
+      </tr>
+      <tr>
+        <td><strong>Gatekeeper / State machine</strong></td>
+        <td><code>InputHandler</code> + <code>GameManager.GameState</code></td>
+        <td>Guarantees at most one piece dragged at a time; blocks all input during the completion screen.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>11. Performance Notes</h2>
+
+  <table>
+    <thead><tr><th>Concern</th><th>Solution</th></tr></thead>
+    <tbody>
+      <tr><td>Per-frame drag allocation</td><td><code>_screenToWorldBuffer</code> Vector3 reused every <code>OnDrag</code> frame — no heap alloc per input event.</td></tr>
+      <tr><td>Triangle / snap-point texture duplication</td><td>All triangle and snap-point sprites are <code>static</code> — allocated once per session regardless of piece count.</td></tr>
+      <tr><td>BFS heap pressure</td><td><code>_carveResult</code>, <code>_carveQueue</code>, <code>_neighborBuffer</code> are pre-allocated fields that are cleared and reused across all <code>CarveRegion</code> calls.</td></tr>
+      <tr><td>Unassigned seed scan cost</td><td>Forward-only cursor <code>_nextSeedCursor</code> — O(T) total vs O(T²) naïve re-scan from index 0.</td></tr>
+      <tr><td>Centroid recomputation</td><td>Dictionary cache keyed by array reference — O(|region|) summation runs only once per unique array; invalidated on merge.</td></tr>
+      <tr><td>Snap-point nearest lookup</td><td>O(1) round-to-integer formula — no linear scan over (N+1)² snap points.</td></tr>
+      <tr><td>Completion check</td><td>Integer counter <code>_filledTriangles</code> — O(1) increment/decrement vs O(N²) full scan.</td></tr>
+      <tr><td>Board shader state</td><td><code>MaterialPropertyBlock</code> — pushes shader properties without creating per-instance material objects.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>12. Third-Party Dependencies</h2>
+
+  <table>
+    <thead><tr><th>Package</th><th>Usage</th></tr></thead>
+    <tbody>
+      <tr><td><strong>DOTween</strong></td><td>All runtime animations: piece drop-in (<code>OutBounce</code>), snap tween (<code>OutQuad</code>), return-to-tray, snap-dot fade, UI text fade-in.</td></tr>
+      <tr><td><strong>TextMeshPro</strong></td><td>Completion panel text rendering (<code>TMP_Text</code> with DOTween <code>DOFade</code>).</td></tr>
+      <tr><td><strong>Unity URP 2D</strong></td><td>Render pipeline; Global Light 2D for board and piece illumination.</td></tr>
+      <tr><td><strong>Unity EventSystem</strong></td><td><code>IPointerDownHandler</code>, <code>IDragHandler</code>, <code>IPointerUpHandler</code> implemented by <code>PieceBehaviour</code>.</td></tr>
+      <tr><td><strong>UnityWebRequest</strong></td><td>HTTP GET for server-hosted level JSON files with procedural fallback.</td></tr>
+    </tbody>
+  </table>
+
+  <hr />
+  <p style="color:#999; font-size:0.84em; text-align:center;">
+    Blokfit — Project Architecture &nbsp;·&nbsp; Internal Design Document &nbsp;·&nbsp; 2026-03-31
+  </p>
+
 </div>
-
-<h3>5.3 BeginLevel (Handmade)</h3>
-<div class="flow">
-LoadHandmadeLevel()
-  → Read next TextAsset from _handmadeLevels[]  (cycles with modulo index)
-  → LevelSerializer.FromJson(asset.text)
-  → ScatterSpawnPositions(levelData)  ← distributes pieces on an arc if spawnX/Y == 0
-  → ApplyLevel(levelData)             ← same finaliser as procedural path
-</div>
-
-<h3>5.4 Drag &amp; Snap (Player Interaction)</h3>
-<div class="flow">
-PieceBehaviour.OnPointerDown
-  → InputHandler.BeginDrag(this)      ← fails if blocked or another drag active
-  → BoardController.Lift(this)        ← removes piece from occupancy map
-  → SetDragging(true)                 ← scale up, show snap dots (DOTween fade)
-
-PieceBehaviour.OnDrag
-  → transform.position = ScreenToWorld(pointer) + _dragOffset
-
-PieceBehaviour.OnPointerUp
-  → SnapSystem.TrySnap(this)
-      → BoardController.GetNearestFreeSnapPoint(anchorWorldPos)   [O(1) round]
-      → distance check (squared, threshold = 0.5 × cellSize)
-      → BoardController.Place(piece, snapPoint)
-          → GetTargetTriangles: validate + build target list
-          → mark _occupiedTriangles[], update _filledTriangles
-          → CheckCompletion()
-      → piece.SetPlaced(targetPos)    ← DOTween snap animation
-      → raise OnMoveExecuted(PlacePieceCommand)
-          → GameManager pushes command onto Stack&lt;ICommand&gt;
-  → [on snap failure] piece.ReturnToTray(fromPos)   ← DOTween return animation
-  → InputHandler.EndDrag()
-</div>
-
-<h3>5.5 Level Completion</h3>
-<div class="flow">
-BoardController.CheckCompletion()
-  → _filledTriangles == _totalTriangles  →  OnBoardCompleted.Invoke()
-
-GameManager.HandleBoardCompleted()
-  → GameState = LevelComplete  (blocks all input via InputHandler.IsBlocked)
-  → UIOverlay.ShowCompletion() ← fade-in "Done" + "Tap to Continue"
-
-Player taps Next Level button
-  → UIOverlay callback → GameManager.StartNextLevel()
-  → BeginLevel(_currentConfig)         ← same config, new seed
-</div>
-
-<h3>5.6 Undo</h3>
-<div class="flow">
-GameManager.UndoLastMove()
-  → commandHistory.Pop()
-  → PlacePieceCommand.Undo()
-      → BoardController.Lift(piece)        ← frees triangles
-      → piece.ReturnToTray(_fromPosition)  ← DOTween back to pre-snap position
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>6. Board System</h2>
-
-<h3>6.1 BoardController</h3>
-<p>
-  Owns three parallel data structures indexed by <code>[row, col, type]</code>:
-</p>
-<ul>
-  <li><code>bool[,,] _occupiedTriangles</code> — fast free/occupied query</li>
-  <li><code>PieceBehaviour[,,] _occupants</code> — reverse lookup (piece at triangle)</li>
-  <li><code>Dictionary&lt;PieceBehaviour, List&lt;(r,c,t)&gt;&gt; _pieceOccupancy</code> — enables O(1) <code>Lift</code></li>
-</ul>
-<p>
-  Snap-point grid: <code>(N+1)² SnapPoint</code> GameObjects sitting at every grid vertex.
-  <code>GetNearestFreeSnapPoint</code> runs in O(1) by rounding the world position to the
-  nearest integer grid coordinate — no distance iteration.
-</p>
-
-<h3>6.2 SnapPoint</h3>
-<p>
-  Lightweight MonoBehaviour marking a grid vertex. Interior points (not on the board edge)
-  display a faint white circle sprite generated at runtime from a procedurally drawn texture.
-  A single shared <code>Sprite</code> is reused across all instances to avoid redundant
-  texture allocations.
-</p>
-
-<h3>6.3 SnapSystem</h3>
-<p>
-  On <code>TrySnap</code>: finds the nearest snap point, checks squared distance against a
-  pre-computed threshold (<code>0.5 × cellSize</code>), then delegates placement to
-  <code>BoardController.Place</code>. On success it raises <code>OnMoveExecuted</code> with a
-  <code>PlacePieceCommand</code> ready to be pushed onto the undo stack.
-</p>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>7. Piece System</h2>
-
-<h3>7.1 PieceFactory (static)</h3>
-<p>
-  Converts <code>PieceJson</code> → <code>PieceData</code>. Translates absolute triangle
-  flat-indices into piece-local <code>TriOffset</code> values by subtracting the anchor
-  cell's (col, row). Parses HTML hex colours via <code>ColorUtility</code>, falling back to
-  grey on parse failure.
-</p>
-
-<h3>7.2 PieceSpawner</h3>
-<p>
-  Instantiates one <code>PieceBehaviour</code> prefab per <code>PieceJson</code> entry,
-  positions it at its tray spawn coordinates, and calls <code>AnimateIn(index)</code> which
-  triggers a staggered DOTween drop-in from above. Keeps an internal list for batch
-  destruction on level clear. Resets the global sort-order counter
-  (<code>PieceSortOrder.Reset()</code>) on destroy.
-</p>
-
-<h3>7.3 PieceBehaviour</h3>
-<p>
-  The heaviest MonoBehaviour — responsible for all visual construction and pointer handling.
-  Built in four steps during <code>Initialize</code>:
-</p>
-<table>
-  <thead><tr><th>Step</th><th>Method</th><th>What it produces</th></tr></thead>
-  <tbody>
-    <tr>
-      <td>1</td><td><code>BuildTriangleSprites()</code></td>
-      <td>One child GameObject + <code>SpriteRenderer</code> per triangle,
-          coloured via a shared <code>MaterialPropertyBlock</code>.
-          Two triangle sprite textures (<em>lower</em> and <em>upper</em>) are generated
-          once and shared across all piece instances.</td>
-    </tr>
-    <tr>
-      <td>2</td><td><code>BuildCollider()</code></td>
-      <td><code>PolygonCollider2D</code> with one path per triangle, enabling
-          Unity's EventSystem pointer events.</td>
-    </tr>
-    <tr>
-      <td>3</td><td><code>BuildAnchorTransforms()</code></td>
-      <td>A single anchor transform at <code>localPosition (0,0)</code> — the piece pivot
-          IS the anchor vertex.</td>
-    </tr>
-    <tr>
-      <td>4</td><td><code>BuildSnapDots()</code></td>
-      <td>1–4 white circle markers placed at interior vertices (vertices shared by ≥2
-          of the piece's own triangles). Invisible at rest; fade in while dragging.</td>
-    </tr>
-  </tbody>
-</table>
-
-<h4>Pointer event flow</h4>
-<ul>
-  <li><strong>OnPointerDown</strong> — gates through <code>InputHandler</code>, lifts piece off board, enables drag visuals.</li>
-  <li><strong>OnDrag</strong> — moves <code>transform.position</code> to pointer + drag offset; uses a cached <code>Vector3</code> buffer to avoid per-frame heap allocation.</li>
-  <li><strong>OnPointerUp</strong> — calls <code>SnapSystem.TrySnap</code>; returns to tray if snap fails.</li>
-</ul>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>8. Input System</h2>
-
-<h3>8.1 InputHandler</h3>
-<p>
-  A single-instance gatekeeper. <code>BeginDrag</code> returns <code>false</code> if
-  <code>IsBlocked</code> (set to <code>true</code> on level complete) or if another drag
-  is already active, ensuring only one piece moves at a time. Stores a <code>DragState</code>
-  (piece reference + pointer ID) as the active drag.
-</p>
-
-<h3>8.2 DragState</h3>
-<p>
-  Plain data object — holds the dragging <code>PieceBehaviour</code> and the pointer ID
-  used to identify the owning touch/mouse event. No MonoBehaviour inheritance.
-</p>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>9. UI System</h2>
-<p>
-  <code>UIOverlay</code> wires up four difficulty buttons and one "Next Level" button.
-  All interaction logic is delegated back to <code>GameManager</code> via
-  <code>System.Action</code> callbacks set during <code>Awake</code> — UIOverlay has no
-  direct reference to GameManager. Completion feedback uses DOTween fade-ins on two
-  <code>TMP_Text</code> elements with a configurable stagger delay.
-</p>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>10. Command System (Undo)</h2>
-<p>
-  <code>ICommand</code> declares <code>Execute()</code> and <code>Undo()</code>.
-  <code>PlacePieceCommand</code> captures the piece, board reference, pre-snap world
-  position, post-snap world position, and snap point at the moment of placement.
-  <code>Undo()</code> calls <code>BoardController.Lift</code> + <code>piece.ReturnToTray</code>.
-  <code>GameManager</code> maintains a <code>Stack&lt;ICommand&gt;</code> cleared on every
-  new level.
-</p>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>11. Procedural Generation</h2>
-<p>
-  Handled by <code>LevelGenerator</code> (MonoBehaviour) and <code>TrianglePartitioner</code>
-  (plain C# class). The full algorithm is described in the companion document
-  <em>ProceduralGeneration_Algorithm.html</em>. In brief:
-</p>
-<ol>
-  <li>Randomised BFS flood-fill partitions the triangle grid into connected regions.</li>
-  <li>Post-processing merges regions that violate piece-count constraints.</li>
-  <li>Each region becomes one piece; colours are assigned from a shuffled 16-colour palette
-      (Fisher-Yates) ensuring no duplicate colours within a level.</li>
-</ol>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>12. Level Loading Paths</h2>
-<table>
-  <thead><tr><th>Path</th><th>Trigger</th><th>Source</th><th>Notes</th></tr></thead>
-  <tbody>
-    <tr>
-      <td><strong>Procedural</strong></td>
-      <td>Difficulty button / Next Level (when <code>_serverBaseUrl</code> is empty)</td>
-      <td><code>LevelGenerator.Generate(config)</code></td>
-      <td>Always succeeds; unique per seed</td>
-    </tr>
-    <tr>
-      <td><strong>Remote</strong></td>
-      <td>Difficulty button (when <code>_serverBaseUrl</code> is set)</td>
-      <td>HTTP GET <code>{baseUrl}/{difficultyName}.json</code></td>
-      <td>Falls back to procedural on network error</td>
-    </tr>
-    <tr>
-      <td><strong>Handmade</strong></td>
-      <td>"Handmade" button</td>
-      <td><code>TextAsset[]</code> array in Inspector</td>
-      <td>Cycles through list; scatter-distributes spawn positions</td>
-    </tr>
-  </tbody>
-</table>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>13. Level Editor (Unity Editor Only)</h2>
-<p>
-  <code>LevelEditorWindow</code> (in <code>Scripts/Editor/</code>) provides an in-editor
-  tool for painting hand-crafted levels. Output is a <code>LevelData</code> JSON file
-  consumable by the <code>TextAsset[]</code> handmade level path.
-</p>
-<div class="note">
-  This window is wrapped in <code>#if UNITY_EDITOR</code> and is excluded from all builds.
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>14. Third-Party Dependencies</h2>
-<table>
-  <thead><tr><th>Package</th><th>Used for</th></tr></thead>
-  <tbody>
-    <tr><td><strong>DOTween</strong> (DG.Tweening)</td><td>Piece drop-in animation, snap/return tweens, UI text fade</td></tr>
-    <tr><td><strong>TextMeshPro</strong> (TMPro)</td><td>Completion panel text labels</td></tr>
-    <tr><td><strong>Unity.Networking</strong></td><td>Remote level fetch (<code>UnityWebRequest</code>)</td></tr>
-  </tbody>
-</table>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<h2>15. Performance Notes</h2>
-<ul>
-  <li><strong>O(1) snap lookup</strong> — <code>GetNearestFreeSnapPoint</code> rounds world position to grid coordinates; no iteration.</li>
-  <li><strong>Shared sprites</strong> — two triangle sprites and one circle sprite are generated once and shared across all instances via <code>static Sprite</code> fields.</li>
-  <li><strong>MaterialPropertyBlock</strong> — piece colour is applied via a <code>MaterialPropertyBlock</code> to avoid instancing separate <code>Material</code> objects.</li>
-  <li><strong>Pre-squared threshold</strong> — snap distance check uses <code>SqrMagnitude</code> vs. a pre-squared threshold to avoid a <code>sqrt</code> per frame.</li>
-  <li><strong>Cached Vector3 buffer</strong> — <code>PieceBehaviour.ScreenToWorld</code> reuses a single <code>Vector3</code> field during drag to avoid per-frame heap allocation.</li>
-  <li><strong>Reused candidate list</strong> — <code>BuildSnapDots</code> reuses a pre-allocated <code>List&lt;&gt;</code> field instead of creating four throwaway lists.</li>
-  <li><strong>Cached camera Z</strong> — <code>_cameraZ</code> is read once at <code>Initialize</code> since the camera never moves.</li>
-</ul>
-
 </body>
 </html>

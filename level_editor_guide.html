@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blokfit Level Editor — User Guide</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:        #1a1c23;
+      --ink-2:      #3a3d4a;
+      --ink-3:      #6b7280;
+      --accent:     #4361ee;
+      --accent-2:   #7209b7;
+      --green:      #22c55e;
+      --amber:      #f59e0b;
+      --red:        #ef4444;
+      --faint:      #f4f5fb;
+      --rule:       #dde0ef;
+      --code-bg:    #1a1d2e;
+      --code-text:  #c0caf5;
+      --mono:       'JetBrains Mono', monospace;
+      --sans:       'Inter', system-ui, sans-serif;
+      --r:          10px;
+    }
+
+    html { font-size: 15px; color: var(--ink); background: #fff; }
+    body { font-family: var(--sans); line-height: 1.78; max-width: 880px; margin: 0 auto; padding: 48px 40px 80px; }
+
+    /* ── Typography ── */
+    h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.4px; color: var(--ink); }
+    h2 { font-size: 1.25rem; font-weight: 700; color: var(--accent); margin: 2.8rem 0 0.85rem; border-bottom: 2px solid var(--rule); padding-bottom: 0.35rem; }
+    h3 { font-size: 1.02rem; font-weight: 600; color: var(--ink-2); margin: 1.6rem 0 0.45rem; }
+    p  { margin-bottom: 0.85rem; }
+    ul, ol { padding-left: 1.5rem; margin-bottom: 0.85rem; }
+    li { margin-bottom: 0.3rem; }
+    strong { font-weight: 600; }
+    hr { border: none; border-top: 1px solid var(--rule); margin: 2.5rem 0; }
+
+    /* ── Cover ── */
+    .cover {
+      background: linear-gradient(135deg, #0d0d1a 0%, #1a1040 50%, #0d1a33 100%);
+      color: #fff;
+      border-radius: var(--r);
+      padding: 48px 56px;
+      margin-bottom: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .cover::before {
+      content: '▦';
+      position: absolute;
+      right: 48px; top: 50%; transform: translateY(-50%);
+      font-size: 9rem; color: rgba(255,255,255,0.04);
+      pointer-events: none; user-select: none;
+    }
+    .cover .eyebrow { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.42); margin-bottom: 0.6rem; }
+    .cover h1 { color: #fff; font-size: 1.95rem; margin-bottom: 0.5rem; }
+    .cover .sub { color: rgba(255,255,255,0.58); font-size: 0.9rem; max-width: 500px; line-height: 1.65; }
+    .cover .meta { display: flex; gap: 0.55rem; flex-wrap: wrap; margin-top: 1.8rem; }
+    .badge { font-size: 0.7rem; font-weight: 600; padding: 0.22rem 0.65rem; border-radius: 999px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); letter-spacing: 0.04em; }
+
+    /* ── Code ── */
+    pre {
+      background: var(--code-bg); color: var(--code-text);
+      border-radius: var(--r); padding: 1rem 1.25rem;
+      font-family: var(--mono); font-size: 0.8rem; line-height: 1.65;
+      overflow-x: auto; margin: 0.85rem 0 1.2rem;
+    }
+    code {
+      font-family: var(--mono); font-size: 0.82em;
+      background: var(--faint); padding: 0.15em 0.4em;
+      border-radius: 4px; color: #c026d3;
+    }
+    pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+    /* highlight inside pre */
+    .kw  { color: #bb9af7; }
+    .str { color: #9ece6a; }
+    .cm  { color: #565f89; font-style: italic; }
+    .num { color: #ff9e64; }
+    .key { color: #7dcfff; }
+
+    /* ── Callout ── */
+    .callout {
+      border-left: 4px solid var(--accent); background: var(--faint);
+      border-radius: 0 var(--r) var(--r) 0;
+      padding: 0.85rem 1.1rem; margin: 0.9rem 0 1.2rem; font-size: 0.9rem;
+    }
+    .callout.tip    { border-color: var(--amber); background: #fffdf0; }
+    .callout.note   { border-color: var(--accent); }
+    .callout.warn   { border-color: var(--red); background: #fff5f5; }
+    .callout.good   { border-color: var(--green); background: #f0fdf4; }
+    .callout > .lbl { display: block; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: #888; margin-bottom: 0.22rem; }
+
+    /* ── UI mockup ── */
+    .ui-mock {
+      background: #1c1c1e;
+      border-radius: var(--r);
+      border: 1px solid #2a2a2e;
+      overflow: hidden;
+      margin: 1rem 0 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+    }
+    .ui-toolbar {
+      background: #2a2a2e;
+      padding: 5px 12px;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid #3a3a3e;
+      color: #ccc;
+    }
+    .ui-toolbar .title { font-weight: 700; color: #e0e0e0; margin-right: 8px; }
+    .ui-toolbar .spacer { flex: 1; }
+    .ui-toolbar .stat { font-size: 0.7rem; color: #888; }
+    .ui-btn { font-size: 0.72rem; padding: 2px 10px; border-radius: 4px; font-family: var(--mono); cursor: default; }
+    .ui-btn.red   { background: #6b1f1f; color: #ff8a8a; border: 1px solid #7a2020; }
+    .ui-btn.green { background: #1a4a28; color: #7dff9e; border: 1px solid #1f5a2e; }
+    .ui-body { display: flex; min-height: 180px; }
+    .ui-left { width: 200px; padding: 10px; border-right: 1px solid #2a2a2e; flex-shrink: 0; }
+    .ui-left .section-title { font-size: 0.7rem; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .ui-left .slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 0.72rem; color: #ccc; }
+    .ui-slider { flex: 1; height: 4px; background: #444; border-radius: 2px; position: relative; }
+    .ui-slider::after { content: ''; position: absolute; left: 0; top: 0; width: 40%; height: 100%; background: var(--accent); border-radius: 2px; }
+    .ui-divider { border: none; border-top: 1px solid #333; margin: 8px 0; }
+    .ui-new-piece { background: #2a2a2e; border: 1px solid #3a3a3e; color: #c0d0ff; border-radius: 4px; padding: 4px 0; text-align: center; font-size: 0.72rem; margin-bottom: 8px; }
+    .piece-row { background: #252528; border-radius: 4px; padding: 5px 7px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .piece-row.active { background: #2a3a55; }
+    .piece-swatch { width: 14px; height: 14px; border-radius: 2px; flex-shrink: 0; }
+    .piece-name { flex: 1; font-size: 0.7rem; color: #ccc; }
+    .piece-check { color: #5fda7e; font-size: 0.75rem; }
+    .piece-x { color: #ff7070; font-size: 0.75rem; }
+    .ui-help { background: #1e2232; border: 1px solid #2a3050; border-radius: 4px; padding: 6px 8px; font-size: 0.68rem; color: #8899cc; margin-top: 6px; line-height: 1.4; }
+    .ui-grid { flex: 1; background: #111113; display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; padding: 10px; align-content: center; }
+    .ui-cell { aspect-ratio: 1; background: #1e1e22; position: relative; overflow: hidden; }
+    .ui-cell::after { content: ''; position: absolute; top: 0; right: 0; width: 0; height: 0; border-style: solid; border-width: 0 100% 100% 0; border-color: transparent #111113 transparent transparent; }
+    .ui-cell.c0 { background: #1d3a5c; }
+    .ui-cell.c0::after { border-color: transparent #111113 transparent transparent; }
+    .ui-cell.c1 { background: #3a1d3a; }
+    .ui-cell.c2 { background: #1d3a2a; }
+
+    /* ── Steps ── */
+    .steps { counter-reset: s; }
+    .step  { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+    .step::before {
+      counter-increment: s; content: counter(s);
+      flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2, #7209b7));
+      color: #fff; font-weight: 700; font-size: 0.82rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-body { flex: 1; padding-top: 4px; }
+    .step-body h3 { margin-top: 0; }
+
+    /* ── Shortcut table ── */
+    .shortcuts { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin: 0.9rem 0 1.3rem; }
+    .shortcuts thead th { background: var(--faint); font-weight: 600; text-align: left; padding: 0.45rem 0.8rem; border-bottom: 2px solid var(--rule); }
+    .shortcuts tbody td { padding: 0.4rem 0.8rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+    .shortcuts tbody tr:last-child td { border-bottom: none; }
+    .key-badge {
+      display: inline-block; font-family: var(--mono); font-size: 0.78rem;
+      background: var(--ink); color: #f0f0f0; padding: 0.15em 0.55em;
+      border-radius: 5px; font-weight: 500; white-space: nowrap;
+    }
+
+    /* ── Tri diagram ── */
+    .tri-diagram {
+      display: flex; gap: 2rem; margin: 0.8rem 0 1.2rem; flex-wrap: wrap;
+    }
+    .tri-box {
+      background: var(--faint); border-radius: var(--r); padding: 1rem 1.2rem;
+      flex: 1; min-width: 200px;
+    }
+    .tri-box svg { display: block; margin: 0.5rem auto; }
+    .tri-box .tri-label { text-align: center; font-size: 0.82rem; color: var(--ink-2); margin-top: 0.4rem; }
+    .tri-box .tri-code { text-align: center; font-family: var(--mono); font-size: 0.75rem; color: var(--accent); margin-top: 0.2rem; }
+
+    /* ── JSON schema ── */
+    .schema-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.9rem 0 1.2rem; }
+    .schema-table thead th { background: var(--code-bg); color: var(--code-text); font-family: var(--mono); font-size: 0.78rem; font-weight: 500; text-align: left; padding: 0.4rem 0.8rem; }
+    .schema-table tbody td { padding: 0.4rem 0.8rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+    .schema-table tbody tr:last-child td { border-bottom: none; }
+    .type-tag { font-family: var(--mono); font-size: 0.75rem; background: #ede9fe; color: #6d28d9; padding: 0.1em 0.4em; border-radius: 4px; }
+
+    /* ── Print ── */
+    @media print {
+      body { padding: 20px 24px; }
+      .cover { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      pre, .ui-mock { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .step, .tri-box, .shortcuts tbody tr { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ COVER ═══ -->
+<div class="cover">
+  <div class="eyebrow">Unity Editor Tool — User Guide</div>
+  <h1>▦ Blokfit Level Editor</h1>
+  <p class="sub">
+    A custom Unity <code style="color:rgba(255,255,255,0.55);background:rgba(255,255,255,0.08);font-size:0.82em;padding:0.1em 0.4em;border-radius:3px;">EditorWindow</code>
+    for hand-authoring puzzle levels by painting triangles on a visual grid
+    and exporting them as JSON for the runtime loader.
+  </p>
+  <div class="meta">
+    <span class="badge">Tools ▸ Blokfit ▸ Level Editor</span>
+    <span class="badge">Ctrl + Alt + L</span>
+    <span class="badge">Blokfit.LevelEditor</span>
+    <span class="badge">Editor-only assembly</span>
+  </div>
+</div>
+
+<!-- ═══ 1 — OPENING ═══ -->
+<h2>1 — Opening the Editor</h2>
+<p>
+  The Level Editor is accessible from two places:
+</p>
+<ul>
+  <li>Unity menu bar: <strong>Tools ▸ Blokfit ▸ Level Editor</strong></li>
+  <li>Keyboard shortcut: <span class="key-badge">Ctrl</span> + <span class="key-badge">Alt</span> + <span class="key-badge">L</span></li>
+</ul>
+<p>
+  The window opens as a dockable Unity panel (minimum size 760 × 540 px).
+  Its state — grid size, piece list, and all triangle assignments — survives domain reloads
+  and Unity restarts because all fields are marked <code>[SerializeField]</code>.
+</p>
+
+<!-- ═══ 2 — LAYOUT ═══ -->
+<h2>2 — Window Layout</h2>
+
+<!-- Mockup -->
+<div class="ui-mock" aria-label="Level Editor window mockup">
+  <div class="ui-toolbar">
+    <span class="title">▦ Blokfit Level Editor</span>
+    <span class="spacer"></span>
+    <span class="stat">Unassigned: 24 / 32 tri</span>
+    &nbsp;
+    <span class="ui-btn red">Clear</span>
+    <span class="ui-btn green">⬇ Export JSON</span>
+  </div>
+  <div class="ui-body">
+    <div class="ui-left">
+      <div class="section-title">⚙ Grid Settings</div>
+      <div class="slider-row">
+        Size (N) <span class="ui-slider"></span> 4
+      </div>
+      <hr class="ui-divider" />
+      <div class="section-title">🎨 Pieces</div>
+      <div class="ui-new-piece">＋ New Piece</div>
+      <div class="piece-row active">
+        <div class="piece-swatch" style="background:#4a90d9;"></div>
+        <span class="piece-name">Piece 0</span>
+        <span class="piece-check">✔</span>
+        <span class="piece-x">✕</span>
+      </div>
+      <div class="piece-row">
+        <div class="piece-swatch" style="background:#d94a70;"></div>
+        <span class="piece-name">Piece 1</span>
+        <span style="font-size:0.68rem;color:#888;">Select</span>
+        <span class="piece-x">✕</span>
+      </div>
+      <div class="ui-help">Active → Piece 0 (8 tri)<br>Left-click: assign / remove &nbsp; Right-click: unassign</div>
+    </div>
+    <div style="flex:1; background:#111113; display:flex; align-items:center; justify-content:center; padding:16px;">
+      <svg width="220" height="180" viewBox="0 0 220 180" style="display:block;">
+        <!-- 4x4 grid of square cells, each split diagonally -->
+        <style>
+          .gc { fill:#1e1e22; stroke:#111; stroke-width:0.5; }
+          .gl { fill:#2a4a6a; stroke:#111; stroke-width:0.5; }
+          .gu { fill:#1e1e22; stroke:#111; stroke-width:0.5; }
+        </style>
+        <!-- row 0 -->
+        <polygon class="gl" points="0,135 55,135 55,90"/>
+        <polygon class="gu" points="0,135 55,90  0,90 "/>
+        <polygon class="gl" points="55,135 110,135 110,90"/>
+        <polygon class="gu" points="55,135 110,90  55,90 "/>
+        <polygon class="gc" points="110,135 165,135 165,90"/>
+        <polygon class="gc" points="110,135 165,90  110,90"/>
+        <polygon class="gc" points="165,135 220,135 220,90"/>
+        <polygon class="gc" points="165,135 220,90  165,90"/>
+        <!-- row 1 -->
+        <polygon class="gl" points="0,90 55,90 55,45"/>
+        <polygon class="gu" points="0,90 55,45  0,45 "/>
+        <polygon class="gc" points="55,90 110,90 110,45"/>
+        <polygon class="gc" points="55,90 110,45  55,45 "/>
+        <polygon style="fill:#4a2a6a;stroke:#111;stroke-width:0.5" points="110,90 165,90 165,45"/>
+        <polygon class="gc" points="110,90 165,45  110,45"/>
+        <polygon class="gc" points="165,90 220,90 220,45"/>
+        <polygon class="gc" points="165,90 220,45  165,45"/>
+        <!-- row 2 -->
+        <polygon class="gc" points="0,45 55,45 55,0"/>
+        <polygon class="gc" points="0,45 55,0  0,0 "/>
+        <polygon class="gc" points="55,45 110,45 110,0"/>
+        <polygon class="gc" points="55,45 110,0  55,0 "/>
+        <polygon class="gc" points="110,45 165,45 165,0"/>
+        <polygon class="gc" points="110,45 165,0  110,0"/>
+        <polygon class="gc" points="165,45 220,45 220,0"/>
+        <polygon class="gc" points="165,45 220,0  165,0"/>
+        <!-- outer border -->
+        <rect x="0" y="0" width="220" height="135" fill="none" stroke="#333" stroke-width="1"/>
+        <!-- grid info label -->
+        <text x="4" y="152" font-family="monospace" font-size="11" fill="rgba(255,255,255,0.3)">Grid 4×4  (32 tri)</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<p>The window has three sections:</p>
+<ul>
+  <li><strong>Toolbar</strong> — title, unassigned-triangle counter, Clear and Export JSON buttons.</li>
+  <li><strong>Left panel (240 px)</strong> — Grid Settings slider and the scrollable Pieces list.</li>
+  <li><strong>Right panel (fills remaining space)</strong> — interactive triangle grid on a dark background.</li>
+</ul>
+
+<!-- ═══ 3 — WORKFLOW ═══ -->
+<h2>3 — Step-by-Step Workflow</h2>
+
+<div class="steps">
+
+  <div class="step">
+    <div class="step-body">
+      <h3>Set the grid size</h3>
+      <p>
+        Use the <strong>Size (N)</strong> slider (range 2–10) to choose the board dimensions.
+        An N×N board contains <strong>N² square cells</strong>, each split diagonally into two
+        right-angle triangles — so a 4×4 grid yields <strong>32 triangles</strong> total.
+      </p>
+      <p>
+        Moving the slider reveals an <strong>Apply</strong> button (shown in amber).
+        Clicking Apply clears all triangle assignments but keeps the piece list intact.
+        A confirmation dialog prevents accidental resets.
+      </p>
+      <div class="callout tip">
+        <span class="lbl">Tip</span>
+        Use <strong>4×4</strong> for easy levels (32 triangles), <strong>6×6</strong> for medium (72),
+        and <strong>8×8</strong> for hard (128).
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-body">
+      <h3>Create pieces</h3>
+      <p>
+        Click <strong>＋ New Piece</strong> to add an entry to the Pieces list.
+        Each piece row contains:
+      </p>
+      <ul>
+        <li><strong>Colour square</strong> — click to open Unity's colour picker. New pieces are automatically
+            assigned a distinct hue from a 10-colour palette.</li>
+        <li><strong>Name field</strong> — editable label (e.g., "Piece 0"). Purely for author convenience;
+            not stored in the JSON output.</li>
+        <li><strong>Triangle counter</strong> — updates live as you paint.</li>
+        <li><strong>Select / ✔ indicator</strong> — click "Select" or anywhere on the row to make
+            the piece active. The active row is highlighted in blue and shows a green ✔.</li>
+        <li><strong>✕ delete button</strong> — removes the piece and unassigns all triangles it owned.
+            Piece indices of subsequent pieces are decremented automatically.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-body">
+      <h3>Paint triangles</h3>
+      <p>
+        With a piece selected, click triangles inside the dark grid panel on the right.
+        The grid uses the same triangular half-cell system as the runtime:
+        each square cell is divided by a <strong>&sol;</strong> diagonal into two triangles.
+      </p>
+
+      <div class="tri-diagram">
+        <div class="tri-box">
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <polygon points="0,80 80,80 80,0" fill="#4361ee" opacity="0.8"/>
+            <polygon points="0,80 80,80 80,0" fill="none" stroke="#2244cc" stroke-width="1.5"/>
+            <text x="52" y="68" font-family="monospace" font-size="11" fill="white">◸</text>
+          </svg>
+          <div class="tri-label"><strong>Lower triangle</strong><br>Bottom-right half</div>
+          <div class="tri-code">type = 0 &nbsp;·&nbsp; vertices: BL, BR, TR</div>
+        </div>
+        <div class="tri-box">
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <polygon points="0,80 80,0 0,0" fill="#7209b7" opacity="0.8"/>
+            <polygon points="0,80 80,0 0,0" fill="none" stroke="#5500aa" stroke-width="1.5"/>
+            <text x="10" y="18" font-family="monospace" font-size="11" fill="white">◿</text>
+          </svg>
+          <div class="tri-label"><strong>Upper triangle</strong><br>Top-left half</div>
+          <div class="tri-code">type = 1 &nbsp;·&nbsp; vertices: BL, TR, TL</div>
+        </div>
+      </div>
+
+      <p><strong>Mouse interactions:</strong></p>
+      <ul>
+        <li><strong>Left-click</strong> — assigns the clicked triangle to the currently selected piece.
+            If the triangle already belongs to that piece, it is <em>unassigned</em> (toggle behaviour).</li>
+        <li><strong>Right-click</strong> — always unassigns the triangle, regardless of which piece owns it.</li>
+      </ul>
+      <p>
+        The active piece's triangles appear <strong>slightly brighter</strong> than the rest so
+        you can see your work at a glance. Unassigned triangles are rendered in a neutral dark grey.
+      </p>
+      <div class="callout note">
+        <span class="lbl">Note</span>
+        The grid's coordinate system keeps <strong>row 0 at the bottom</strong> (matching Unity's
+        world-space Y-up convention). The screen Y axis is inverted, so row 0 appears at the
+        bottom of the grid panel.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-body">
+      <h3>Export JSON</h3>
+      <p>
+        When the level is ready, click <strong>⬇ Export JSON</strong> in the toolbar.
+      </p>
+      <ol>
+        <li>If any triangles are unassigned, a <strong>warning dialog</strong> appears.
+            You can choose to continue or cancel and fix the gaps.</li>
+        <li>A <strong>Save File panel</strong> opens, defaulting to
+            <code>Assets/Resources/Levels/</code> (created automatically if it doesn't exist).
+            Choose any name with a <code>.json</code> extension.</li>
+        <li>The file is written and, if the path is inside <code>Assets/</code>,
+            <code>AssetDatabase.ImportAsset</code> is called automatically —
+            the file appears in the Project browser without a manual refresh.</li>
+      </ol>
+      <div class="callout good">
+        <span class="lbl">Recommended save path</span>
+        <code>Assets/Resources/Levels/level_handmade_01.json</code>
+      </div>
+      <div class="callout tip">
+        <span class="lbl">Tip</span>
+        Pieces with zero assigned triangles are silently skipped during export —
+        you don't need to delete empty pieces before exporting.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ 4 — JSON FORMAT ═══ -->
+<h2>4 — JSON Output Format</h2>
+<p>
+  The exported file serialises a <code>LevelData</code> object using
+  <code>JsonUtility.ToJson(..., prettyPrint: true)</code>. The schema is:
+</p>
+
+<table class="schema-table">
+  <thead>
+    <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>grid.size</code></td>
+      <td><span class="type-tag">int</span></td>
+      <td>Board side length N. Board has N×N cells and 2N² triangles.</td>
+    </tr>
+    <tr>
+      <td><code>pieces[i].cells</code></td>
+      <td><span class="type-tag">int[]</span></td>
+      <td>Triangle flat-indices belonging to this piece. Formula: <code>(row × N + col) × 2 + type</code></td>
+    </tr>
+    <tr>
+      <td><code>pieces[i].color</code></td>
+      <td><span class="type-tag">string</span></td>
+      <td>HTML hex colour, e.g. <code>"#4A90D9"</code>. Derived from the colour picker value.</td>
+    </tr>
+    <tr>
+      <td><code>pieces[i].anchors</code></td>
+      <td><span class="type-tag">int[]</span></td>
+      <td>Single-element array containing the smallest flat-index in <code>cells</code> (bottom-left-most triangle). Used as the piece's pivot vertex at runtime.</td>
+    </tr>
+    <tr>
+      <td><code>pieces[i].spawnX</code></td>
+      <td><span class="type-tag">float</span></td>
+      <td>Always <code>0</code> when exported from the editor. Scattered at runtime by <code>GameManager.ScatterSpawnPositions()</code>.</td>
+    </tr>
+    <tr>
+      <td><code>pieces[i].spawnY</code></td>
+      <td><span class="type-tag">float</span></td>
+      <td>Always <code>0</code> when exported from the editor. See above.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Example output</strong> for a 4×4 board with two pieces:</p>
+<pre><code>{
+    <span class="key">"grid"</span>: {
+        <span class="key">"size"</span>: <span class="num">4</span>
+    },
+    <span class="key">"pieces"</span>: [
+        {
+            <span class="key">"cells"</span>: [ <span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">8</span>, <span class="num">9</span> ],   <span class="cm">// triangle flat-indices</span>
+            <span class="key">"color"</span>: <span class="str">"#4A90D9"</span>,             <span class="cm">// from colour picker</span>
+            <span class="key">"anchors"</span>: [ <span class="num">0</span> ],              <span class="cm">// smallest flat-index</span>
+            <span class="key">"spawnX"</span>: <span class="num">0.0</span>,
+            <span class="key">"spawnY"</span>: <span class="num">0.0</span>
+        },
+        {
+            <span class="key">"cells"</span>: [ <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span> ],
+            <span class="key">"color"</span>: <span class="str">"#D94A70"</span>,
+            <span class="key">"anchors"</span>: [ <span class="num">3</span> ],
+            <span class="key">"spawnX"</span>: <span class="num">0.0</span>,
+            <span class="key">"spawnY"</span>: <span class="num">0.0</span>
+        }
+    ]
+}</code></pre>
+
+<h3>Flat index formula</h3>
+<p>
+  Every triangle is identified by a single integer derived from its position:
+</p>
+<pre><code>flat = (row × N + col) × 2 + type
+
+<span class="cm">// Example for a 4×4 grid (N = 4):</span>
+<span class="cm">// Cell (col=1, row=0), lower triangle (type=0):</span>
+flat = (0 × 4 + 1) × 2 + 0 = <span class="num">2</span>
+
+<span class="cm">// Cell (col=1, row=0), upper triangle (type=1):</span>
+flat = (0 × 4 + 1) × 2 + 1 = <span class="num">3</span></code></pre>
+
+<!-- ═══ 5 — LOADING IN GAME ═══ -->
+<h2>5 — Loading the Level at Runtime</h2>
+<ol>
+  <li>Save the JSON file inside <code>Assets/</code> (recommended: <code>Assets/Resources/Levels/</code>).</li>
+  <li>In the Unity Scene, select the <strong>GameManager</strong> GameObject.</li>
+  <li>In the Inspector, expand the <strong>Handmade Levels</strong> list and drag the JSON <code>TextAsset</code> into a slot.</li>
+  <li>Press <strong>Play</strong> and click the <strong>Handmade</strong> button in the game UI.</li>
+</ol>
+<div class="callout note">
+  <span class="lbl">Runtime behaviour</span>
+  Multiple JSON files can be added to the list. They are cycled in order each time
+  the Handmade button is pressed. Spawn positions (always 0 in exported files) are
+  automatically distributed around the tray by <code>ScatterSpawnPositions()</code>,
+  which places pieces in a circular arc with a small random jitter.
+</div>
+
+<!-- ═══ 6 — INTERNALS ═══ -->
+<h2>6 — How the Editor Works Internally</h2>
+
+<h3>State persistence</h3>
+<p>
+  The window's fields are decorated with <code>[SerializeField]</code>, which means Unity
+  serialises them into the window's internal state. This keeps the grid and piece list intact
+  across domain reloads (script compilation) and Editor restarts.
+</p>
+
+<h3>Triangle assignment array</h3>
+<p>
+  A flat <code>int[]</code> called <code>_owner</code> of length <code>N × N × 2</code> tracks
+  which piece owns each triangle. The value is <code>-1</code> for unassigned and
+  ≥ 0 for a piece index. This array is the single source of truth for both rendering and export.
+</p>
+
+<h3>Grid rendering</h3>
+<p>
+  The grid panel is drawn using <code>Handles.DrawAAConvexPolygon</code> (anti-aliased fill) and
+  <code>Handles.DrawAAPolyLine</code> (outline) inside a <code>Handles.BeginGUI / EndGUI</code>
+  block. Each frame only the triangles that changed need to be redrawn;
+  <code>Repaint()</code> is called explicitly on mouse events rather than every frame.
+</p>
+
+<h3>Hit-testing</h3>
+<p>
+  Clicking the grid panel runs a <strong>point-in-triangle test</strong> (sign / cross-product
+  method) for every triangle in the grid to determine which one was clicked. Because the
+  number of triangles is at most 200 (10×10 grid), this brute-force scan is imperceptible.
+</p>
+<pre><code><span class="cm">// Determines the sign of the cross-product to check which side of each edge the point is on.</span>
+<span class="kw">static float</span> Cross(Vector2 pt, Vector3 u, Vector3 v)
+    => (u.x - pt.x) * (v.y - pt.y) - (u.y - pt.y) * (v.x - pt.x);
+
+<span class="cm">// Point is inside iff all three cross-products have the same sign.</span>
+<span class="kw">bool</span> hasNeg = d1 &lt; 0 || d2 &lt; 0 || d3 &lt; 0;
+<span class="kw">bool</span> hasPos = d1 &gt; 0 || d2 &gt; 0 || d3 &gt; 0;
+<span class="kw">return</span> !(hasNeg &amp;&amp; hasPos);</code></pre>
+
+<h3>Export pipeline</h3>
+<p>
+  Export iterates over the piece list, collects the flat indices owned by each piece into a
+  <code>List&lt;int&gt;</code>, picks the minimum index as the anchor, converts the colour to an
+  HTML hex string via <code>ColorUtility.ToHtmlStringRGB</code>, and builds a <code>PieceJson</code>
+  per piece. The root <code>LevelData</code> is finally serialised by the shared
+  <code>LevelSerializer.ToJson()</code> utility.
+</p>
+
+<!-- ═══ 7 — SHORTCUTS ═══ -->
+<h2>7 — Shortcuts &amp; Quick Reference</h2>
+
+<table class="shortcuts">
+  <thead>
+    <tr><th>Action</th><th>Shortcut / Control</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Open editor</td>
+      <td><span class="key-badge">Ctrl</span>+<span class="key-badge">Alt</span>+<span class="key-badge">L</span></td>
+      <td>Also via <em>Tools ▸ Blokfit ▸ Level Editor</em></td>
+    </tr>
+    <tr>
+      <td>Assign triangle</td>
+      <td><span class="key-badge">Left-click</span> on grid</td>
+      <td>Active piece must be selected. Clicking again on the same triangle unassigns it (toggle).</td>
+    </tr>
+    <tr>
+      <td>Unassign triangle</td>
+      <td><span class="key-badge">Right-click</span> on grid</td>
+      <td>Works regardless of which piece is selected.</td>
+    </tr>
+    <tr>
+      <td>Select piece</td>
+      <td>Click <strong>Select</strong> or anywhere on piece row</td>
+      <td>The row highlights in blue and shows ✔.</td>
+    </tr>
+    <tr>
+      <td>Delete piece</td>
+      <td>Click <strong>✕</strong> on piece row</td>
+      <td>Unassigns all its triangles; reindexes subsequent pieces.</td>
+    </tr>
+    <tr>
+      <td>Resize grid</td>
+      <td>Move slider → click <strong>Apply</strong></td>
+      <td>Clears assignments but keeps piece list. Prompts for confirmation.</td>
+    </tr>
+    <tr>
+      <td>Clear everything</td>
+      <td>Toolbar <strong>Clear</strong> button</td>
+      <td>Removes all pieces and assignments. Prompts for confirmation.</td>
+    </tr>
+    <tr>
+      <td>Export JSON</td>
+      <td>Toolbar <strong>⬇ Export JSON</strong></td>
+      <td>Warn on unassigned triangles → save dialog → auto-import into Assets.</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+<p style="font-size:0.8rem;color:#aaa;text-align:center;">
+  Blokfit Level Editor &nbsp;·&nbsp; <code>Blokfit.LevelEditor.LevelEditorWindow</code> &nbsp;·&nbsp; Editor-only assembly &nbsp;·&nbsp; 2026
+</p>
+
+</body>
+</html>

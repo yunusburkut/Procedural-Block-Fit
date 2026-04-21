@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(powershell -Command \":*)"
+      "Bash(powershell -Command \":*)",
+      "Bash(pip install:*)",
+      "Bash(pip3 install:*)"
     ]
   }
 }

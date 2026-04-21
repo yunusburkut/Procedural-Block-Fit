@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blokfit — Teknik Kod İnceleme Dökümanı</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --accent:   #6366f1;
+    --accent2:  #8b5cf6;
+    --dark:     #0f172a;
+    --text:     #1e293b;
+    --muted:    #64748b;
+    --border:   #e2e8f0;
+    --bg-soft:  #f8fafc;
+    --bg-code:  #0f172a;
+    --inline-bg:#f1f5f9;
+    --inline-fg:#be185d;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+    background: #fff;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar TOC ── */
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 260px;
+    height: 100vh;
+    background: var(--dark);
+    color: #94a3b8;
+    overflow-y: auto;
+    padding: 24px 0;
+    z-index: 100;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  #sidebar .logo {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid #1e293b;
+    margin-bottom: 12px;
+  }
+  #sidebar .logo span { font-size: 17px; font-weight: 700; color: #fff; }
+  #sidebar .logo small { display: block; color: #475569; font-size: 11px; margin-top: 2px; }
+  #sidebar a {
+    display: block;
+    padding: 5px 20px;
+    color: #94a3b8;
+    text-decoration: none;
+    transition: color .15s, background .15s;
+    border-left: 3px solid transparent;
+  }
+  #sidebar a:hover { color: #fff; background: #1e293b; }
+  #sidebar a.h2 { color: #cbd5e1; font-weight: 600; margin-top: 6px; }
+  #sidebar a.h3 { padding-left: 32px; font-size: 11.5px; }
+  #sidebar a.active { color: var(--accent); border-left-color: var(--accent); background: #1e293b; }
+
+  /* ── Main content ── */
+  #content {
+    margin-left: 260px;
+    max-width: 880px;
+    padding: 48px 60px 80px;
+    flex: 1;
+  }
+
+  /* ── Headings ── */
+  h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--dark);
+    letter-spacing: -.5px;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 36px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .subtitle span {
+    background: var(--inline-bg);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  h2 {
+    font-size: 19px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    padding: 10px 18px;
+    border-radius: 8px;
+    margin: 44px 0 18px;
+  }
+  h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    border-left: 4px solid var(--accent);
+    padding-left: 12px;
+    margin: 32px 0 12px;
+  }
+  h4 {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 22px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h4::before { content: '◆'; font-size: 8px; color: var(--accent); }
+
+  /* ── Paragraph ── */
+  p { margin: 0 0 14px; }
+
+  /* ── Blockquote ── */
+  .intro-box {
+    background: linear-gradient(135deg, #eff6ff 0%, #f0f4ff 100%);
+    border: 1px solid #c7d2fe;
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 0 0 32px;
+    color: #374151;
+    font-style: italic;
+  }
+
+  /* ── HR ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+  /* ── Code inline ── */
+  code {
+    font-family: 'JetBrains Mono', 'Consolas', 'Fira Code', monospace;
+    font-size: 12px;
+    background: var(--inline-bg);
+    color: var(--inline-fg);
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  /* ── Code block ── */
+  pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 22px;
+    overflow-x: auto;
+    margin: 14px 0 20px;
+    font-size: 11.5px;
+    line-height: 1.65;
+    border-left: 4px solid var(--accent);
+    position: relative;
+  }
+  pre code {
+    background: transparent;
+    color: #e2e8f0;
+    padding: 0;
+    font-size: 11.5px;
+    white-space: pre;
+  }
+
+  /* ── Tables ── */
+  .table-wrap { overflow-x: auto; margin: 14px 0 20px; border-radius: 8px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  thead { background: var(--accent); color: #fff; }
+  th { padding: 10px 14px; text-align: left; font-weight: 600; white-space: nowrap; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) { background: var(--bg-soft); }
+
+  /* ── Lists ── */
+  ul, ol { margin: 6px 0 14px 22px; }
+  li { margin: 4px 0; }
+  li::marker { color: var(--accent); }
+
+  /* ── Strong ── */
+  strong { font-weight: 700; color: var(--dark); }
+  em { color: #4b5563; }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block;
+    background: var(--inline-bg);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    font-family: monospace;
+    margin: 0 2px;
+  }
+
+  /* ── File reference ── */
+  .file-ref {
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 6px;
+    margin: 0 0 14px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .file-ref span { display: flex; align-items: center; gap: 6px; }
+  .file-ref .label { font-weight: 600; color: var(--text); }
+
+  /* ── Dependency graph ── */
+  .dep-graph {
+    background: var(--bg-code);
+    color: #7dd3fc;
+    border-radius: 10px;
+    padding: 18px 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    line-height: 1.7;
+    border-left: 4px solid #0ea5e9;
+    margin: 14px 0 20px;
+    overflow-x: auto;
+  }
+
+  /* ── Callout boxes ── */
+  .callout {
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 14px 0;
+    font-size: 13px;
+  }
+  .callout.info { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e40af; }
+  .callout.warn { background: #fffbeb; border-left: 4px solid #f59e0b; color: #78350f; }
+  .callout.good { background: #f0fdf4; border-left: 4px solid #22c55e; color: #14532d; }
+
+  /* ── Section anchor ── */
+  [id] { scroll-margin-top: 24px; }
+
+  /* ── Scrollbar ── */
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+  /* ── Print ── */
+  @media print {
+    #sidebar { display: none; }
+    #content { margin-left: 0; padding: 20px; }
+    pre { font-size: 10px; }
+    h2 { font-size: 15px; }
+    h3 { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ SIDEBAR ══════════════════ -->
+<nav id="sidebar">
+  <div class="logo">
+    <span>Blokfit</span>
+    <small>Teknik Kod İnceleme Dökümanı</small>
+  </div>
+  <a href="#s1" class="h2">1. Projeye Genel Bakış</a>
+  <a href="#s2" class="h2">2. Dizin ve Namespace</a>
+  <a href="#s3" class="h2">3. Veri Modeli</a>
+  <a href="#s31" class="h3">3.1 JSON Format</a>
+  <a href="#s32" class="h3">3.2 Runtime PieceData</a>
+  <a href="#s4" class="h2">4. Tasarım Desenleri</a>
+  <a href="#s41" class="h3">4.1 Command Pattern</a>
+  <a href="#s42" class="h3">4.2 Observer Pattern</a>
+  <a href="#s43" class="h3">4.3 Factory Pattern</a>
+  <a href="#s44" class="h3">4.4 ScriptableObject</a>
+  <a href="#s5" class="h2">5. Sistem Akışı</a>
+  <a href="#s6" class="h2">6. Detaylı Sistem Analizleri</a>
+  <a href="#s61" class="h3">6.1 GameManager</a>
+  <a href="#s62" class="h3">6.2 BoardController</a>
+  <a href="#s63" class="h3">6.3 SnapSystem</a>
+  <a href="#s64" class="h3">6.4 PieceBehaviour</a>
+  <a href="#s65" class="h3">6.5 Command Pattern</a>
+  <a href="#s66" class="h3">6.6 Prosedürel Üretim</a>
+  <a href="#s67" class="h3">6.7 Input Sistemi</a>
+  <a href="#s68" class="h3">6.8 Factory + Spawner</a>
+  <a href="#s69" class="h3">6.9 Serializasyon</a>
+  <a href="#s610" class="h3">6.10 DifficultyConfig</a>
+  <a href="#s611" class="h3">6.11 UIOverlay</a>
+  <a href="#s612" class="h3">6.12 Level Editor</a>
+  <a href="#s7" class="h2">7. Performans Kararları</a>
+  <a href="#s8" class="h2">8. Test Kapsamı</a>
+  <a href="#s9" class="h2">9. Bağımlılık Grafiği</a>
+</nav>
+
+<!-- ══════════════════ CONTENT ══════════════════ -->
+<main id="content">
+
+  <h1>Blokfit — Teknik Kod İnceleme Dökümanı</h1>
+  <div class="subtitle">
+    <span>📅 2026-04-04</span>
+    <span>🎮 Unity (URP)</span>
+    <span>💻 C#</span>
+    <span>🧪 NUnit EditMode</span>
+  </div>
+
+  <div class="intro-box">
+    Bu döküman Blokfit projesinin tüm çalışma zamanı scriptlerini kod incelemesi için hazırlanmıştır.
+    Her servis, neden bu şekilde tasarlandığını ve hangi alternatiflerin neden seçilmediğini açıklamaktadır.
+  </div>
+
+  <!-- ─── 1. GENEL BAKIŞ ─── -->
+  <h2 id="s1">1. Projeye Genel Bakış</h2>
+
+  <p>Blokfit, <strong>N×N üçgensel izgara</strong> (triangular grid) üzerine kurulu bir bulmaca oyunudur.
+  Her kare iki üçgene bölünür (alt-sağ = type 0, üst-sol = type 1). Oyuncu, tepsideki parçaları
+  sürükleyip ızgaraya yapıştırarak tüm hücreleri doldurur.</p>
+
+  <h4>Temel Kavramlar</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Kavram</th><th>Açıklama</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Triangle flat index</strong></td><td><code>(row * N + col) * 2 + type</code> — tüm üçgenlerin tek sayıyla adreslenmesi</td></tr>
+      <tr><td><strong>SnapPoint</strong></td><td>Izgaranın her köşe noktasına karşılık gelen nesne; parçalar buraya "snap" edilir</td></tr>
+      <tr><td><strong>Anchor</strong></td><td>Bir parçanın referans noktası — yerel koordinatların sıfır orijini</td></tr>
+      <tr><td><strong>TriOffset</strong></td><td>Parça içindeki her üçgenin anchor'dan <code>(dcol, drow, type)</code> farkı</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- ─── 2. DİZİN ─── -->
+  <h2 id="s2">2. Dizin ve Namespace Yapısı</h2>
+
+<pre><code>Assets/Scripts/
+├── Board/               → Blokfit.Board
+│   ├── BoardController.cs   # grid durumu + tamamlanma tespiti
+│   ├── SnapPoint.cs         # köşe nokta veri + görsel
+│   └── SnapSystem.cs        # snap hesabı + command üretimi
+├── Commands/            → Blokfit.Commands
+│   ├── ICommand.cs          # geri alma arayüzü
+│   └── PlacePieceCommand.cs # tek yerleştirme eylemi
+├── Core/                → Blokfit.Core
+│   ├── GameManager.cs       # orkestratör MonoBehaviour
+│   ├── LevelData.cs         # JSON veri sınıfları
+│   └── LevelSerializer.cs   # JsonUtility sarmalayıcı
+├── Generation/          → Blokfit.Generation
+│   ├── LevelGenerator.cs    # prosedürel seviye üreticisi
+│   └── TrianglePartitioner.cs # BFS flood-fill bölümleyici
+├── Input/               → Blokfit.Input
+│   ├── DragState.cs         # aktif sürüklemenin anlık görüntüsü
+│   └── InputHandler.cs      # tek-parça sürükleme kapı bekçisi
+├── Pieces/              → Blokfit.Pieces
+│   ├── PieceBehaviour.cs    # MonoBehaviour: drag/snap/görsel
+│   ├── PieceData.cs         # runtime immutable parça tanımı
+│   ├── PieceFactory.cs      # JSON → PieceData dönüşümü
+│   ├── PieceSpawner.cs      # parçaların sahneye yerleştirilmesi
+│   └── PieceSortOrder.cs    # global sıralama sayacı
+├── ScriptableObjects/   → Blokfit.ScriptableObjects
+│   └── DifficultyConfig.cs  # zorluk parametreleri (tasarımcı verileri)
+├── UI/                  → Blokfit.UI
+│   └── UIOverlay.cs         # buton bağlantıları + tamamlanma paneli
+└── Editor/              → Blokfit.LevelEditor  (yalnız Editor build)
+    └── LevelEditorWindow.cs # Unity Editor penceresi
+
+Assets/Tests/EditMode/
+└── FloodFillPartitionerTests.cs  → Blokfit.Tests.EditMode</code></pre>
+
+  <h4>Assembly Definition'lar</h4>
+  <ul>
+    <li><code>Blokfit.Scripts.asmdef</code> — çalışma zamanı kodu</li>
+    <li><code>Blokfit.Editor.asmdef</code> — yalnız Editor (<code>UNITY_EDITOR</code> guard yerine ayrı asmdef; derleme hataları runtime build'e sızmaz)</li>
+    <li><code>Blokfit.Tests.EditMode.asmdef</code> — NUnit testleri</li>
+  </ul>
+
+  <!-- ─── 3. VERİ MODELİ ─── -->
+  <h2 id="s3">3. Veri Modeli</h2>
+
+  <h3 id="s31">3.1 JSON Seviye Formatı (<code>LevelData.cs</code>)</h3>
+
+<pre><code>LevelData
+ ├── GridData grid
+ │    └── int size              # kaç hücre × kaç hücre (örn. 4 → 4×4 = 32 üçgen)
+ └── PieceJson[] pieces
+      ├── int[]  cells          # üçgen flat index listesi
+      ├── string color          # "#FF6600" gibi HTML rengi
+      ├── int[]  anchors        # [0] = primary anchor flat index
+      └── float  spawnX/spawnY  # dünya-uzayı başlangıç konumu</code></pre>
+
+  <div class="callout info">
+    <strong>Neden flat index?</strong> Hem satır+sütun+tip üçlüsünü tek bir <code>int</code> ile ifade eder,
+    hem de JSON boyutunu küçük tutar. Her yerde <code>flat / 2</code> → hücre, <code>flat % 2</code> → tip hesabı yapılır.
+  </div>
+
+  <h3 id="s32">3.2 Runtime Parça Tanımı (<code>PieceData.cs</code> + <code>TriOffset</code>)</h3>
+
+<pre><code>public readonly struct TriOffset
+{
+    public readonly int dcol;  // anchor'dan sütun farkı
+    public readonly int drow;  // anchor'dan satır farkı
+    public readonly int type;  // 0=alt, 1=üst
+}</code></pre>
+
+  <p><code>PieceFactory.FromJson()</code> absolute flat index'leri anchor'a göre <strong>relative offset'lere</strong> dönüştürür.
+  Bunun avantajı: aynı şekilli bir parça, farklı konumlarda yerleştirildiğinde <code>SnapPoint</code> offset'lerini
+  toplayarak hedef üçgeni hesaplamak O(k) kalır (k = üçgen sayısı).</p>
+
+  <!-- ─── 4. TASARIM ─── -->
+  <h2 id="s4">4. Tasarım Desenleri</h2>
+
+  <h3 id="s41">4.1 Command Pattern</h3>
+
+  <p><strong>Neden:</strong> Geri alma (undo) işlemi. Her başarılı snap bir <code>PlacePieceCommand</code> üretir
+  ve <code>GameManager</code>'daki <code>Stack&lt;ICommand&gt;</code> üstüne itilir.</p>
+
+<pre><code>ICommand
+ └── PlacePieceCommand
+      ├── Execute()  → BoardController.Place()  + piece.SetPlaced()
+      └── Undo()     → BoardController.Lift()   + piece.ReturnToTray()</code></pre>
+
+  <p><code>SnapSystem.OnMoveExecuted</code> eventi command'ı <code>GameManager</code>'a iletir; <code>GameManager</code> stack'i sahiplenir.
+  Bu sayede <code>SnapSystem</code> ve <code>BoardController</code>, <code>GameManager</code>'dan bağımsızdır.</p>
+
+  <h3 id="s42">4.2 Observer Pattern (C# Events)</h3>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Event</th><th>Yayıncı</th><th>Abone</th></tr></thead>
+    <tbody>
+      <tr><td><code>BoardController.OnBoardCompleted</code></td><td><code>BoardController.CheckCompletion()</code></td><td><code>GameManager.HandleBoardCompleted</code></td></tr>
+      <tr><td><code>SnapSystem.OnMoveExecuted(ICommand)</code></td><td><code>SnapSystem.TrySnap()</code></td><td><code>GameManager.HandleMoveExecuted</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout good"><code>OnDestroy</code>'da abonelik kaldırılır (<code>-=</code>). Memory leak'e karşı doğru pratik.</div>
+
+  <h3 id="s43">4.3 Factory Pattern</h3>
+
+  <p><code>PieceFactory</code> static bir sınıftır (MonoBehaviour değil). JSON'dan runtime veri üretmek için
+  tek noktadan sorumluluk: flat index → relative offset dönüşümü ve renk parse'ı burada yapılır.
+  <code>PieceSpawner</code> bu factory'yi kullanır ama iç detayını bilmez.</p>
+
+  <h3 id="s44">4.4 ScriptableObject (Veri Nesneleri)</h3>
+
+  <p><code>DifficultyConfig</code> tasarımcı parametrelerini kod değişikliği gerektirmeden Inspector'dan
+  ayarlanmasına olanak tanır. Sahneye prefab olarak değil, asset olarak serialize edilir —
+  yani farklı sahnelerde referans paylaşımı mümkündür.</p>
+
+  <!-- ─── 5. SİSTEM AKIŞI ─── -->
+  <h2 id="s5">5. Sistem Akışı — Bir Level Nasıl Başlar?</h2>
+
+<pre><code>GameManager.Start()
+  │
+  ├─ BeginLevel(easyConfig)
+  │    ├─ pieceSpawner.DestroyAll()          # önceki parçaları temizle
+  │    ├─ boardController.ResetBoard()        # occupancy sıfırla
+  │    │
+  │    ├─ [serverBaseUrl boşsa]
+  │    │    └─ levelGenerator.Generate(config)  ──► LevelData
+  │    └─ [serverBaseUrl doluysa]
+  │         └─ Coroutine: LoadFromServer()
+  │              ├─ UnityWebRequest.Get(url)
+  │              ├─ başarılı → LevelSerializer.FromJson(json)
+  │              └─ başarısız → levelGenerator.Generate(config)  (fallback)
+  │
+  └─ ApplyLevel(levelData)
+       ├─ boardController.Initialize(gridSize)   # snap point grid'i kur
+       ├─ snapSystem.SetSnapThreshold(cellSize)  # eşiği güncelle
+       └─ pieceSpawner.SpawnAll(pieces, gridSize)
+            └─ foreach piece:
+                 ├─ PieceFactory.FromJson()      → PieceData
+                 ├─ Instantiate(piecePrefab)
+                 ├─ piece.Initialize(...)         # sprite, collider, anchor
+                 └─ piece.AnimateIn(index)        # DOTween bounce</code></pre>
+
+<pre><code>Oyuncu bir parçayı sürükler:
+  PieceBehaviour.OnPointerDown()
+    ├─ InputHandler.BeginDrag()   # zaten sürükleme var mı? engellendi mi?
+    ├─ board.Lift(this)           # occupancy temizle (undo hazırlığı)
+    └─ SetDragging(true)          # scale ↑, sort order ↑, snap dots görünür
+
+  PieceBehaviour.OnDrag()
+    └─ transform.position = mouseWorldPos + dragOffset
+
+  PieceBehaviour.OnPointerUp()
+    └─ snapSystem.TrySnap(this)
+         ├─ board.GetNearestFreeSnapPoint()   # O(1) round & clamp
+         ├─ distSq &lt; thresholdSq?
+         │    └─ board.Place(piece, snapPoint)  # tüm üçgenler boş mu?
+         │         ├─ başarılı → piece.SetPlaced(pos)   [DOTween]
+         │         │             PlacePieceCommand oluştur
+         │         │             OnMoveExecuted → GameManager → stack.Push(cmd)
+         │         └─ başarısız → piece.ReturnToTray()  [DOTween]
+         └─ eşik dışı → piece.ReturnToTray()</code></pre>
+
+<pre><code>Tüm üçgenler dolu olduğunda:
+  BoardController.CheckCompletion()
+    └─ filledTriangles &gt;= totalTriangles
+         └─ OnBoardCompleted?.Invoke()
+              └─ GameManager.HandleBoardCompleted()
+                   ├─ inputHandler.IsBlocked = true   # input dondur
+                   └─ uiOverlay.ShowCompletion()       # panel DOFade</code></pre>
+
+  <!-- ─── 6. DETAYLI ─── -->
+  <h2 id="s6">6. Detaylı Sistem Analizleri</h2>
+
+  <!-- 6.1 GameManager -->
+  <h3 id="s61">6.1 GameManager — Orkestratör</h3>
+
+  <div class="file-ref">
+    <span><span class="label">Dosya</span> Assets/Scripts/Core/GameManager.cs</span>
+    <span><span class="label">Namespace</span> Blokfit.Core</span>
+    <span><span class="label">Lifecycle</span> Awake · Start · OnDestroy</span>
+  </div>
+
+  <p>GameManager sahne içindeki tüm sistemlerin <strong>wiring</strong> (bağlantı) noktasıdır.
+  Kendisi iş mantığı yürütmez; diğer sistemleri koordine eder.</p>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Sorumluluk</th><th>Nasıl</th></tr></thead>
+    <tbody>
+      <tr><td>Level başlatma</td><td><code>BeginLevel(DifficultyConfig)</code></td></tr>
+      <tr><td>Seviye yükleme fallback zinciri</td><td><code>_serverBaseUrl</code> → <code>LevelGenerator</code></td></tr>
+      <tr><td>Undo stack</td><td><code>Stack&lt;ICommand&gt; _commandHistory</code></td></tr>
+      <tr><td>Input engelleme</td><td><code>_inputHandler.IsBlocked = true/false</code></td></tr>
+      <tr><td>Handmade level döngüsü</td><td><code>_handmadeIndex % _handmadeLevels.Length</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>Dikkat Çeken Nokta — <code>ScatterSpawnPositions()</code></h4>
+
+  <p>Level Editor'dan export edilen JSON'larda <code>spawnX/Y = 0</code> gelir. Bu metod,
+  bunları tray merkezi etrafında daire üzerinde dağıtır:</p>
+
+<pre><code>float angle  = (float)i / n * Mathf.PI * 2f;
+p.spawnX     = center.x + Mathf.Cos(angle) * _traySpread + jitter;
+p.spawnY     = center.y + Mathf.Sin(angle) * _traySpread * 0.5f + jitter;</code></pre>
+
+  <p>Y ekseni 0.5x scale ile sıkıştırılmıştır — ekran aspect ratio'suna göre elips görünümü sağlar.</p>
+
+  <h4>GameState Enum</h4>
+
+<pre><code>private enum GameState { Idle, LevelComplete }</code></pre>
+
+  <p>Yalnızca input bloğunu yönetmek için minimal state machine. Karmaşık durum geçişleri olmadığından
+  enum basit tutulmuş; bu bilinçli ve doğru bir karardır.</p>
+
+  <!-- 6.2 BoardController -->
+  <h3 id="s62">6.2 BoardController — Grid Durumu</h3>
+
+  <div class="file-ref">
+    <span><span class="label">Dosya</span> Assets/Scripts/Board/BoardController.cs</span>
+    <span><span class="label">Namespace</span> Blokfit.Board</span>
+  </div>
+
+  <p>Izgaranın <strong>authoritative state kaynağı</strong>. Parçalar "gerçekte yerleştirildi mi?" sorusuna buradaki diziler cevap verir.</p>
+
+  <h4>İç Veri Yapıları</h4>
+
+<pre><code>SnapPoint[,]           _snapPoints;          // [vRow, vCol] — (N+1)² köşe
+bool[,,]               _occupiedTriangles;   // [row, col, type] — üçgen doluluk
+PieceBehaviour[,,]     _occupants;           // hangi parça bu üçgeni tutuyor
+Dictionary&lt;PieceBehaviour, List&lt;(int r, int c, int t)&gt;&gt; _pieceOccupancy;</code></pre>
+
+  <p><code>_pieceOccupancy</code> ters yönlü bir lookup sağlar: parça → üçgen listesi.
+  <code>Lift()</code> O(k) yapar (k = parçanın üçgen sayısı), tüm tahtayı taramadan.</p>
+
+  <h4>O(1) Snap Point Bulma</h4>
+
+<pre><code>public SnapPoint GetNearestFreeSnapPoint(Vector2 worldPos)
+{
+    int vCol = Mathf.Clamp(Mathf.RoundToInt((worldPos.x - _boardOrigin.x) / _cellSize), 0, _gridSize);
+    int vRow = Mathf.Clamp(Mathf.RoundToInt((worldPos.y - _boardOrigin.y) / _cellSize), 0, _gridSize);
+    return _snapPoints[vRow, vCol];
+}</code></pre>
+
+  <p>Dünya pozisyonunu grid koordinatına çevirmek sadece böl-yuvarlala-sınırla işlemi.
+  <code>_boardOrigin</code>, <code>Initialize</code>'da önbelleğe alınır, her frame hesaplanmaz.</p>
+
+  <h4>Shader ile Grid Çizgisi</h4>
+
+<pre><code>_boardMpb.SetFloat(GridSizeProp, gridSize);
+_boardRenderer.SetPropertyBlock(_boardMpb);</code></pre>
+
+  <div class="callout info">
+    Izgara çizgileri Unity Physics çizgisi değil, shader ile çizilir.
+    <code>MaterialPropertyBlock</code> kullanımı, her <code>BoardController</code> örneğinin shared materyali
+    kirletmeden kendi grid boyutunu shader'a iletmesini sağlar.
+  </div>
+
+  <!-- 6.3 SnapSystem -->
+  <h3 id="s63">6.3 SnapSystem — Snap Mantığı</h3>
+
+  <div class="file-ref">
+    <span><span class="label">Dosya</span> Assets/Scripts/Board/SnapSystem.cs</span>
+    <span><span class="label">Namespace</span> Blokfit.Board</span>
+  </div>
+
+  <p>Parça bırakıldığında tek bir karar verir: snap başarılı mı, değil mi?</p>
+
+  <h4>Kritik Optimizasyon — Squared Distance</h4>
+
+<pre><code>_snapThresholdSq = _snapThreshold * _snapThreshold;
+// ...
+float distSq = Vector2.SqrMagnitude(primaryAnchorWorldPos - candidate.WorldPosition);
+if (distSq &gt;= _snapThresholdSq) return false;</code></pre>
+
+  <p><code>Vector2.Magnitude</code> içinde <code>Mathf.Sqrt</code> çağrısı vardır. Karşılaştırma için
+  kesin mesafeye gerek olmadığından kare mesafe kullanılır — her drag frame'de değil, yalnızca bırakma anında hesaplanır.</p>
+
+  <h4>Snap Eşiği</h4>
+
+<pre><code>_snapThreshold = cellSize * 0.5f;</code></pre>
+
+  <p>Hücre boyutunun yarısı. Dinamik: <code>Initialize</code> sırasında <code>GameManager</code> tarafından set edilir, sabit kodlanmamış.</p>
+
+  <!-- 6.4 PieceBehaviour -->
+  <h3 id="s64">6.4 PieceBehaviour — Parça Davranışı</h3>
+
+  <div class="file-ref">
+    <span><span class="label">Dosya</span> Assets/Scripts/Pieces/PieceBehaviour.cs</span>
+    <span><span class="label">Namespace</span> Blokfit.Pieces</span>
+  </div>
+
+  <p>En büyük script. Beş ana sorumluluğu vardır:</p>
+
+  <h4>a) Dinamik Sprite Üretimi</h4>
+
+  <p>Her üçgen tipi için <strong>paylaşılan statik sprite</strong> üretilir (sadece bir kez):</p>
+
+<pre><code>private static Sprite _lowerTriSprite;   // type 0 — tüm instance'lar paylaşır
+private static Sprite _upperTriSprite;   // type 1</code></pre>
+
+  <p>Renk, <code>MaterialPropertyBlock</code> ile her parçada ayrı uygulanır:</p>
+
+<pre><code>mpb.SetColor(ColorProp, (Color)Data.Color);
+sr.SetPropertyBlock(mpb);</code></pre>
+
+  <div class="callout good">
+    <code>MaterialPropertyBlock</code> draw call birleştirmeyi (GPU batching) bozmaz;
+    renk farklılığı için materyal klonu oluşturmaktan çok daha verimlidir.
+  </div>
+
+  <h4>b) Dinamik PolygonCollider2D</h4>
+
+  <p>Her üçgen için ayrı bir path tanımlanır:</p>
+
+<pre><code>// type 0 → alt üçgen (BL, BR, TR)
+new[] { new Vector2(x0, y0), new Vector2(x1, y0), new Vector2(x1, y1) }
+// type 1 → üst üçgen (BL, TR, TL)
+new[] { new Vector2(x0, y0), new Vector2(x1, y1), new Vector2(x0, y1) }</code></pre>
+
+  <p>Çoklu path içeren tek collider; ayrı collider component'leri yerine tercih edilmiştir.</p>
+
+  <h4>c) Snap Dot Sistemi</h4>
+
+  <p>Sürükleme sırasında görünen beyaz noktalar parçanın iç köşe noktalarına yerleştirilir.
+  Seçim mantığı: her köşe için onu çevreleyen parça üçgeni sayısı hesaplanır (max 6).
+  Eşik sırası: 6 → 4 → 2 → 0 (en iç noktalar tercih edilir). Sayı ağırlıklı rastgele:</p>
+
+<pre><code>// ~80% → 1 dot,  ~12% → 2,  ~5% → 3,  ~3% → 4
+float roll = UnityEngine.Random.value;
+int dotCount = roll &lt; 0.80f ? 1 : roll &lt; 0.92f ? 2 : roll &lt; 0.97f ? 3 : 4;</code></pre>
+
+  <h4>d) Sürükleme Optimizasyonları</h4>
+
+<pre><code>private Vector3 _screenToWorldBuffer;   // her frame heap tahsisi yapılmaz
+private float   _cameraZ;              // Initialize'da önbelleğe alınır
+
+private Vector2 ScreenToWorld(Vector2 screenPos)
+{
+    _screenToWorldBuffer.x = screenPos.x;
+    _screenToWorldBuffer.y = screenPos.y;
+    _screenToWorldBuffer.z = _cameraZ;
+    return _camera.ScreenToWorldPoint(_screenToWorldBuffer);
+}</code></pre>
+
+  <h4>e) Animasyonlar (DOTween)</h4>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Animasyon</th><th>Metod</th><th>Açıklama</th></tr></thead>
+    <tbody>
+      <tr><td>Giriş</td><td><code>AnimateIn(index)</code></td><td>OutBounce, <code>index × 0.12s</code> stagger</td></tr>
+      <tr><td>Snap</td><td><code>SetPlaced()</code></td><td>DOMove 0.15s OutQuad</td></tr>
+      <tr><td>Geri dön</td><td><code>ReturnToTray()</code></td><td>DOMove 0.2s OutQuad</td></tr>
+      <tr><td>Snap dots</td><td><code>SetDragging()</code></td><td>DOFade görünür/görünmez</td></tr>
+    </tbody>
+  </table></div>
+
+  <p><code>DOKill()</code> her animasyon öncesi çağrılır — önceki tween'in yarıda kesilmesi sağlanır.</p>
+
+  <!-- 6.5 Command -->
+  <h3 id="s65">6.5 Command Pattern — Geri Alma</h3>
+
+  <div class="file-ref">
+    <span><span class="label">Dosyalar</span> Assets/Scripts/Commands/</span>
+  </div>
+
+<pre><code>public interface ICommand
+{
+    void Execute();
+    void Undo();
+}</code></pre>
+
+  <p><code>PlacePieceCommand</code> tüm gerekli state'i constructor'da alır:</p>
+
+<pre><code>new PlacePieceCommand(piece, _board, fromPos, targetPiecePos, candidate)</code></pre>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Parametre</th><th>Açıklama</th></tr></thead>
+    <tbody>
+      <tr><td><code>fromPos</code></td><td>Drag başlamadan önceki pozisyon (undo için geri dönüş noktası)</td></tr>
+      <tr><td><code>targetPiecePos</code></td><td>Snap sonrası dünya pozisyonu</td></tr>
+      <tr><td><code>candidate</code></td><td>Hangi snap point'e yerleştirildi</td></tr>
+    </tbody>
+  </table></div>
+
+  <p><strong>Undo()</strong>: <code>_board.Lift(piece)</code> occupancy temizler → <code>piece.ReturnToTray(fromPos)</code> DOTween ile geri döner.</p>
+  <p>Stack <code>GameManager</code>'da tutulur; level değişince temizlenir.</p>
+
+  <!-- 6.6 Generation -->
+  <h3 id="s66">6.6 Prosedürel Üretim Sistemi</h3>
+
+  <div class="file-ref">
+    <span><span class="label">Dosyalar</span> Assets/Scripts/Generation/</span>
+  </div>
+
+  <h4>TrianglePartitioner — BFS Flood-Fill</h4>
+
+  <p>Temel algoritma: her adımda seed üçgenden başlayarak komşu üçgenlere BFS ile yayıl,
+  <code>targetSize</code> kadar üçgen topla.</p>
+
+<pre><code>// Adjacency kuralları:
+// lower (type 0) → komşuları hepsi upper (type 1):
+AddIfFree(col,     row,     1);  // aynı hücre / diyagonal
+AddIfFree(col,     row - 1, 1);  // alt hücre
+AddIfFree(col + 1, row,     1);  // sağ hücre
+
+// upper (type 1) → komşuları hepsi lower (type 0):
+AddIfFree(col,     row,     0);  // aynı hücre / diyagonal
+AddIfFree(col,     row + 1, 0);  // üst hücre
+AddIfFree(col - 1, row,     0);  // sol hücre</code></pre>
+
+  <div class="callout info">
+    Her üçgenin en fazla 3 komşusu vardır. Alt-üst değişimi nedeniyle köşegen sınır geçişleri doğal olarak engellenir.
+  </div>
+
+  <p><strong>Bellek optimizasyonu:</strong> Her <code>CarveRegion</code> çağrısında yeni nesne oluşturulmaz,
+  aynı <code>List</code> ve <code>Queue</code> koleksiyonları temizlenerek yeniden kullanılır.
+  <code>HasUnassigned</code> ileri yönlü cursor tutar (<code>_nextSeedCursor</code>) — atanmış olanları baştan taramaz.</p>
+
+  <h4>LevelGenerator — Parça Boyutu ve Sayısı Kontrolü</h4>
+
+  <ol>
+    <li>Her bölge <code>[minTriSize, maxTriSize]</code> aralığında hedeflenir</li>
+    <li>Küçük çıkan bölgeler (<code>&lt; minTriSize</code>) en yakın komşuyla birleştirilir</li>
+    <li>Parça sayısı <code>maxPieces</code>'i aşıyorsa en küçük olanlar birleştirilir</li>
+  </ol>
+
+  <p><strong>Centroid cache:</strong> <code>Dictionary&lt;int[], Vector2&gt;</code> referans eşitliği üzerinden çalışır.
+  Birleştirme sonrası eski diziler cache'den temizlenir, yeni birleşik dizi lazy hesaplar.</p>
+
+  <p><strong>Renk paleti:</strong> 16 renk, hue wheel'de ~22° aralıklarla seçilmiştir. Her level için
+  Fisher-Yates shuffle yapılır; böylece aynı renk iki farklı parçada tekrar etmez.</p>
+
+  <!-- 6.7 Input -->
+  <h3 id="s67">6.7 Input Sistemi</h3>
+
+  <div class="file-ref">
+    <span><span class="label">Dosyalar</span> Assets/Scripts/Input/</span>
+  </div>
+
+  <h4>InputHandler — Tek Sürükleme Kapı Bekçisi</h4>
+
+<pre><code>public bool BeginDrag(PieceBehaviour piece, PointerEventData eventData)
+{
+    if (IsBlocked) return false;   // level-complete durumu
+    if (IsDragging) return false;  // başka parça sürükleniyor
+    CurrentDrag = new DragState(piece, eventData.pointerId);
+    return true;
+}</code></pre>
+
+  <ul>
+    <li><code>IsBlocked</code> — <code>GameManager</code> tarafından level tamamlandığında <code>true</code> yapılır</li>
+    <li><code>IsDragging</code> — aynı anda iki parmak (multi-touch) farklı parçaları sürüklemeyi engeller</li>
+  </ul>
+
+  <h4>DragState — Immutable Anlık Görüntü</h4>
+
+<pre><code>public class DragState
+{
+    public PieceBehaviour Piece     { get; }   // setter yok → immutable
+    public int            PointerId { get; }
+}</code></pre>
+
+  <!-- 6.8 Factory -->
+  <h3 id="s68">6.8 Factory + Spawner</h3>
+
+  <h4>PieceFactory (static)</h4>
+
+  <p>JSON flat index'lerini anchor'a göre relative <code>TriOffset</code>'lere dönüştürür:</p>
+
+<pre><code>int anchorCellFlat = primaryAnchorFlat / 2;
+int anchorCol      = anchorCellFlat % gridSize;
+int anchorRow      = anchorCellFlat / gridSize;
+
+offsets[i] = new TriOffset(col - anchorCol, row - anchorRow, type);</code></pre>
+
+  <p>Bu dönüşüm sayesinde aynı şekilli parça farklı konumlara yerleştirildiğinde yalnızca
+  anchor snap point değişir, offset listesi aynı kalır.</p>
+
+  <h4>PieceSpawner (MonoBehaviour)</h4>
+
+  <p>Inspector'da tuttuğu <code>_piecePrefab</code>'ı instantiate eder. Spawn sonrası
+  <code>PieceSortOrder.Reset()</code> çağrılır — level değişiminde sıralama sayacı sıfırlanır.
+  <code>PieceSortOrder</code> global statik sayaçtır: en son dokunulan parça her zaman en üstte görünür.</p>
+
+  <!-- 6.9 Serialization -->
+  <h3 id="s69">6.9 Level Serializasyonu</h3>
+
+<pre><code>public static string    ToJson(LevelData data) =&gt; JsonUtility.ToJson(data, prettyPrint: true);
+public static LevelData FromJson(string json)  =&gt; JsonUtility.FromJson&lt;LevelData&gt;(json);</code></pre>
+
+  <p><code>JsonUtility</code> Unity'nin yerleşik serializer'ı. <code>Newtonsoft.Json</code> gibi harici paket gerektirmez;
+  <code>[Serializable]</code> attribute yeterlidir. Kısıtı: <code>Dictionary</code> ve <code>interface</code> desteklenmez —
+  bu yüzden <code>LevelData</code> sade POCO sınıflardan oluşur.</p>
+
+  <h4>Sunucudan Yükleme</h4>
+
+<pre><code>using var req = UnityWebRequest.Get(url);
+yield return req.SendWebRequest();
+if (req.result == UnityWebRequest.Result.Success)
+    ApplyLevel(LevelSerializer.FromJson(req.downloadHandler.text));
+else
+    ApplyLevel(_levelGenerator.Generate(config));  // graceful fallback</code></pre>
+
+  <p><code>using var</code> — <code>UnityWebRequest</code> <code>IDisposable</code> implement eder; <code>using</code> ile bellek serbest bırakılır.
+  Başarısız istek sessizce prosedürel üretimle devam eder.</p>
+
+  <!-- 6.10 DifficultyConfig -->
+  <h3 id="s610">6.10 DifficultyConfig — ScriptableObject</h3>
+
+<pre><code>[CreateAssetMenu(fileName = "DifficultyConfig", menuName = "Blokfit/Difficulty Config")]
+public class DifficultyConfig : ScriptableObject
+{
+    public string difficultyName;
+    public int    gridSize      = 4;   // board gridSize × gridSize cells
+    public int    minPieces     = 5;
+    public int    maxPieces     = 6;
+    public int    minPieceSize  = 3;   // kare cinsinden (dahili olarak ×2 → üçgen)
+    public int    maxPieceSize  = 4;
+}</code></pre>
+
+  <div class="callout info">
+    <strong>Neden ScriptableObject?</strong> Tasarımcı kod değişikliği yapmadan parametreleri ayarlayabilir.
+    Birden fazla sahne aynı asset'i referans gösterebilir. <code>MonoBehaviour</code> gerektirmez, sahne bağımsızdır.
+  </div>
+
+  <!-- 6.11 UIOverlay -->
+  <h3 id="s611">6.11 UIOverlay</h3>
+
+  <div class="file-ref">
+    <span><span class="label">Dosya</span> Assets/Scripts/UI/UIOverlay.cs</span>
+  </div>
+
+  <p>Callback tabanlı tasarım: <code>GameManager</code>, <code>Awake</code>'de callback'leri atar;
+  <code>UIOverlay</code> butona basılınca bu callback'leri çağırır. <code>UIOverlay</code>, <code>GameManager</code>'ı import etmez:</p>
+
+<pre><code>_uiOverlay.SetDifficultyCallbacks(
+    easy:   () =&gt; BeginLevel(_easyConfig),
+    medium: () =&gt; BeginLevel(_mediumConfig),
+    hard:   () =&gt; BeginLevel(_hardConfig));</code></pre>
+
+  <p>Tamamlanma paneli animasyonu için DOTween fade kullanılır; başlatmadan önce <code>DOKill()</code> çağrılır.</p>
+
+  <!-- 6.12 Level Editor -->
+  <h3 id="s612">6.12 Level Editor (Editor-Only)</h3>
+
+  <div class="file-ref">
+    <span><span class="label">Dosya</span> Assets/Scripts/Editor/LevelEditorWindow.cs</span>
+    <span><span class="label">Kısayol</span> Tools ▶ Blokfit ▶ Level Editor (Ctrl+Alt+L)</span>
+  </div>
+
+  <p>IMGUI tabanlı editor penceresi:</p>
+  <ul>
+    <li><strong>Sol panel:</strong> ızgara boyutu, parça listesi (renk seçici, isim, sil)</li>
+    <li><strong>Sağ panel:</strong> N×N üçgen ızgarası; sol-tık → seçili parçaya ata, sağ-tık → sil</li>
+    <li><strong>Araç çubuğu:</strong> Clear + Export JSON</li>
+  </ul>
+
+  <p>Her üçgen için <code>_owner</code> dizisi tutulur (<code>-1 = atanmamış, ≥0 = parça index</code>).
+  Export sırasında <code>PieceJson</code> nesneleri üretilir ve <code>LevelSerializer.ToJson()</code> ile dosyaya yazılır.
+  <code>spawnX/Y = 0</code> bırakılır — <code>GameManager.ScatterSpawnPositions()</code> çalışma zamanında dağıtır.</p>
+
+  <div class="callout good">
+    State <code>[SerializeField]</code> ile işaretlenmiştir: Unity domain reload (script derleme) sonrası
+    bile pencere içeriği korunur.
+  </div>
+
+  <!-- ─── 7. PERFORMANS ─── -->
+  <h2 id="s7">7. Performans Kararları</h2>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Karar</th><th>Konum</th><th>Neden</th></tr></thead>
+    <tbody>
+      <tr><td>Statik paylaşılan üçgen sprite'ları</td><td><code>PieceBehaviour</code></td><td>N parça için yalnızca 2 texture</td></tr>
+      <tr><td><code>MaterialPropertyBlock</code> ile renk</td><td><code>BuildTriangleSprites()</code></td><td>GPU batching korunur</td></tr>
+      <tr><td>Squared distance karşılaştırması</td><td><code>SnapSystem.TrySnap()</code></td><td><code>sqrt</code> çağrısından kaçınılır</td></tr>
+      <tr><td><code>_boardOrigin</code> önbelleği</td><td><code>BoardController.Initialize()</code></td><td>Drag frame'lerinde aritmetik yok</td></tr>
+      <tr><td><code>_cameraZ</code> önbelleği</td><td><code>PieceBehaviour.Initialize()</code></td><td>Her <code>OnDrag</code>'de Transform erişimi yok</td></tr>
+      <tr><td>Reused collection buffers</td><td><code>TrianglePartitioner</code></td><td>BFS'de GC baskısı azaltılır</td></tr>
+      <tr><td><code>_nextSeedCursor</code> ilerleyen cursor</td><td><code>HasUnassigned()</code></td><td>Her çağrıda O(1); baştan tarama yok</td></tr>
+      <tr><td><code>_screenToWorldBuffer</code> reuse</td><td><code>PieceBehaviour</code></td><td><code>OnDrag</code>'de heap tahsisi yok</td></tr>
+      <tr><td>Ters lookup dictionary</td><td><code>BoardController._pieceOccupancy</code></td><td><code>Lift()</code> O(k) — tablo taraması yok</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- ─── 8. TESTLER ─── -->
+  <h2 id="s8">8. Test Kapsamı</h2>
+
+  <div class="file-ref">
+    <span><span class="label">Dosya</span> Assets/Tests/EditMode/FloodFillPartitionerTests.cs</span>
+  </div>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Test</th><th>Ne test ediyor</th></tr></thead>
+    <tbody>
+      <tr><td><code>CarveRegion_ReturnsExactTargetSize</code></td><td>Tam hedef büyüklüğünde bölge döner</td></tr>
+      <tr><td><code>CarveRegion_ReturnedCellsAreContiguous</code></td><td>Tüm üçgenler bitişik (adjacency ile bağlı)</td></tr>
+      <tr><td><code>FullPartition_CoversAllCells_4x4</code></td><td>4×4 = 32 üçgen, hepsi kapsanıyor, hiç tekrar yok</td></tr>
+      <tr><td><code>FullPartition_CoversAllCells_6x6</code></td><td>6×6 = 72 üçgen, hepsi kapsanıyor</td></tr>
+      <tr><td><code>CarveRegion_LargerThanRemaining_ReturnsAllRemaining</code></td><td>Kalan azsa mevcut olanları döndürür</td></tr>
+      <tr><td><code>HasUnassigned_ReturnsFalseAfterFullCoverage</code></td><td>Tüm üçgenler atandıktan sonra false</td></tr>
+    </tbody>
+  </table></div>
+
+  <p><code>AreContiguous</code> yardımcı metodu, test içinde <code>TrianglePartitioner</code>'ın
+  adjacency kurallarını DFS ile bağımsız olarak doğrular. Bu, production ve test kodunun
+  aynı kural kümesini kullandığını kanıtlar.</p>
+
+  <div class="callout warn">
+    <strong>Eksik test kapsamı (code review'da sorulabilir):</strong>
+    <ul style="margin: 6px 0 0 18px;">
+      <li><code>PieceFactory.FromJson()</code> unit testleri yok</li>
+      <li><code>BoardController.Place/Lift</code> unit testleri yok</li>
+      <li><code>SnapSystem.TrySnap()</code> integration test yok</li>
+    </ul>
+  </div>
+
+  <!-- ─── 9. BAĞIMLILIK ─── -->
+  <h2 id="s9">9. Bağımlılık Grafiği</h2>
+
+  <div class="dep-graph"><pre style="background:transparent;border:none;padding:0;margin:0;color:#7dd3fc;">GameManager
+ ├─── BoardController ◄─── SnapSystem ◄─── PieceBehaviour
+ │         │                                     │
+ │    SnapPoint[,]                          PieceData
+ │                                          PieceSortOrder
+ ├─── PieceSpawner ──► PieceFactory ──► PieceData
+ │         │
+ │    PieceBehaviour (Instantiate)
+ │
+ ├─── LevelGenerator ──► TrianglePartitioner
+ │         │
+ │    DifficultyConfig (ScriptableObject)
+ │
+ ├─── InputHandler ──► DragState
+ │
+ ├─── UIOverlay  (callback tersine bağımlılık)
+ │
+ └─── LevelSerializer (static, bağımsız)
+
+Commands:
+ SnapSystem → PlacePieceCommand → ICommand → GameManager (via event)</pre></div>
+
+  <h4>Kritik Bağımsızlıklar</h4>
+  <ul>
+    <li><code>UIOverlay</code>, <code>GameManager</code>'ı import etmez (callback tersine enjeksiyon)</li>
+    <li><code>PieceFactory</code> static; herhangi bir MonoBehaviour'a bağımlı değil</li>
+    <li><code>LevelSerializer</code> ve <code>LevelData</code> saf POCO; Unity'ye minimum bağımlılık</li>
+    <li><code>TrianglePartitioner</code> saf C#; <code>UnityEngine</code> import etmez — EditMode'da test edilebilir</li>
+    <li><code>DragState</code> immutable; setter yok, paylaşılan state'den güvenli</li>
+  </ul>
+
+</main>
+
+<script>
+  // Active sidebar link on scroll
+  const links = document.querySelectorAll('#sidebar a');
+  const headings = document.querySelectorAll('[id]');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`#sidebar a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  headings.forEach(h => observer.observe(h));
+</script>
+</body>
+</html>
