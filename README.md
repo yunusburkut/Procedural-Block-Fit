@@ -199,4 +199,4 @@ Getting the BFS to produce valid partitions took one afternoon. Getting those pa
 
 ## Tech Stack
 
-`Unity 6` · `C#` · `DOTween` · `ScriptableObjects` · `Custom EditorWindow (IMGUI)` · `NUnit`
+`Unity 6` · `C#` · `DOTween` · `ScriptableObjects` · `Custom EditorWindow (IMGUI)` 
