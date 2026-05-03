@@ -1,4 +1,6 @@
-Blokfit
+
+https://github.com/user-attachments/assets/a0d7d588-3ca3-4198-976d-e30b95aa2d5d
+
 Blokfit is a 2D puzzle game built in Unity where the player drags and drops shaped pieces onto a triangular grid to fill it completely. Every cell is split diagonally into two triangles, giving pieces more organic shapes compared to traditional block puzzles.
 
 Procedural Generation
