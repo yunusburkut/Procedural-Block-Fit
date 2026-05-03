@@ -9,8 +9,6 @@ Every level is generated at runtime — no hand-authored content.
 
 ![Unity](https://img.shields.io/badge/Unity%206-000000?style=flat&logo=unity&logoColor=white)
 ![C#](https://img.shields.io/badge/C%23-239120?style=flat&logo=csharp&logoColor=white)
-![DOTween](https://img.shields.io/badge/DOTween-FF6B00?style=flat)
-![NUnit](https://img.shields.io/badge/NUnit-EditMode%20Tests-informational?style=flat)
 
 ---
 
